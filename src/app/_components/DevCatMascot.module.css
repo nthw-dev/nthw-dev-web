@@ -1,0 +1,163 @@
+/* Splash, corner dock, and toggle for the Dev Cat mascot. */
+
+/*
+ * Hidden unless the document is marked `.js`, so a visitor without scripts
+ * never gets a full-screen overlay they cannot dismiss. The animation is the
+ * second safety net: the splash lifts on its own even if React never hydrates.
+ */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  place-items: center;
+  background: #05070d;
+}
+
+:global(html.js) .splash {
+  display: grid;
+  animation: splashOut 0.6s 2s forwards;
+}
+
+@keyframes splashOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.splashInner {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+
+.bar {
+  width: 190px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.barFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f59e0b, #38bdf8);
+  transform-origin: left;
+  animation: barFill 2s cubic-bezier(0.3, 0.9, 0.4, 1) forwards;
+}
+
+@keyframes barFill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ========================= Corner dock ========================= */
+
+.dock {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  animation: dockIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .dock {
+    left: auto;
+    right: 12px;
+    bottom: 12px;
+    transform: none;
+  }
+}
+
+@keyframes dockIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+  }
+}
+
+@media (min-width: 640px) {
+  @keyframes dockIn {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.9);
+    }
+  }
+}
+
+.dockButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(5, 7, 13, 0.8);
+  color: #94a3b8;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.dockButton:hover {
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ========================= Collapsed pill ========================= */
+
+.reopen {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(5, 7, 13, 0.85);
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transform: translateX(-50%);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.reopen:hover {
+  color: #f8fafc;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+@media (min-width: 640px) {
+  .reopen {
+    left: auto;
+    right: 12px;
+    transform: none;
+  }
+}
+
+.pawDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
