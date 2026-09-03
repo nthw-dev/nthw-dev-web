@@ -1,5 +1,6 @@
 import { Braces, GitBranch, Gauge } from "lucide-react";
 
+import Emphasis from "./Emphasis";
 import Photo from "./Photo";
 import Reveal from "./Reveal";
 import Section from "./Section";
@@ -9,17 +10,17 @@ const pillars = [
   {
     icon: Braces,
     title: "Backend & system design",
-    body: "Go and Node services, event-driven with Kafka and RabbitMQ, designed around the failure modes rather than the happy path.",
+    body: "Go and Node services, **event-driven with Kafka and RabbitMQ**, designed around the failure modes rather than the happy path.",
   },
   {
     icon: Gauge,
     title: "Correctness under load",
-    body: "Test coverage above 80%, k6 load profiles against stubbed dependencies, and bottlenecks removed before they reach production.",
+    body: "**Test coverage above 80%**, k6 load profiles against stubbed dependencies, and bottlenecks removed before they reach production.",
   },
   {
     icon: GitBranch,
     title: "End-to-end delivery",
-    body: "Web, mobile, CI/CD, and infrastructure — I can carry a product from an empty repository to something running for real users.",
+    body: "**Web, mobile, CI/CD, and infrastructure** — I can carry a product from an empty repository to something running for real users.",
   },
 ];
 
@@ -46,7 +47,7 @@ export default function About() {
                 key={paragraph}
                 className="text-base leading-relaxed text-slate-400 sm:text-lg lg:text-base"
               >
-                {paragraph}
+                <Emphasis text={paragraph} />
               </p>
             ))}
           </div>
@@ -65,7 +66,7 @@ export default function About() {
                       {pillar.title}
                     </h3>
                     <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-                      {pillar.body}
+                      <Emphasis text={pillar.body} />
                     </p>
                   </div>
                 </div>

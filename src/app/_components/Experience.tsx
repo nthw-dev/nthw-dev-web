@@ -1,5 +1,6 @@
 import { ArrowUpRight, Globe, MapPin } from "lucide-react";
 
+import Emphasis from "./Emphasis";
 import Reveal from "./Reveal";
 import Section from "./Section";
 import { experiences } from "~/data/resume";
@@ -61,7 +62,7 @@ export default function Experience() {
                 </header>
 
                 <p className="mt-4 text-sm leading-relaxed text-slate-300">
-                  {job.context}
+                  <Emphasis text={job.context} />
                 </p>
 
                 {job.links && (
@@ -91,7 +92,9 @@ export default function Experience() {
                         aria-hidden="true"
                         className="bg-accent-400 mt-2 h-1 w-1 shrink-0 rounded-full"
                       />
-                      {point}
+                      <span>
+                        <Emphasis text={point} />
+                      </span>
                     </li>
                   ))}
                 </ul>

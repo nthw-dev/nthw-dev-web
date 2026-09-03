@@ -27,7 +27,7 @@ export default function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </span>
-              Open to senior backend roles
+              {`Open to ${profile.title} roles`}
             </p>
 
             <h1
@@ -120,6 +120,12 @@ export default function Hero() {
                 priority
                 className="relative h-40 w-40 rounded-full border border-white/10 object-cover shadow-2xl sm:h-52 sm:w-52 lg:h-72 lg:w-72"
               />
+
+              {/* Nickname tag, hugging the portrait's lower-left arc. It sits
+                  after the image so it paints above both it and the glow. */}
+              <span className="border-accent-400/30 bg-ink-900/90 text-accent-300 absolute -bottom-1 -left-1 rounded-full border px-3 py-1 font-mono text-xs whitespace-nowrap shadow-lg backdrop-blur-sm sm:-bottom-2 sm:-left-2 sm:px-3.5 sm:py-1.5 sm:text-sm">
+                {profile.nickname}
+              </span>
             </div>
           </div>
         </div>
@@ -139,14 +145,17 @@ export default function Hero() {
           ))}
         </ul>
 
-        {/* Stats strip */}
-        <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-4">
+        {/* Stats strip. The 1px separators are the container's background
+            showing through the gaps, so the strip fades in as one piece: a
+            per-cell stagger would leave that background bare — a grey block —
+            wherever a cell had not arrived yet. The numbers keep their own
+            stagger through CountUp. */}
+        <dl
+          className="rise mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-4"
+          style={{ animationDelay: "1500ms" }}
+        >
           {stats.map((s, i) => (
-            <div
-              key={s.label}
-              className="bg-ink-900 rise px-5 py-6"
-              style={{ animationDelay: `${1500 + i * 160}ms` }}
-            >
+            <div key={s.label} className="bg-ink-900 px-5 py-6">
               <dd className="font-mono text-3xl font-bold text-slate-50 sm:text-4xl">
                 <CountUp value={s.value} delayMs={1600 + i * 160} />
               </dd>
