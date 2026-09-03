@@ -8,6 +8,11 @@ import styles from "./DevCatMascot.module.css";
 
 const SPLASH_MS = 2000;
 const STORAGE_KEY = "devcat-hidden";
+/**
+ * What counts as a phone: a touch-first device, or a viewport narrower than the
+ * 640px breakpoint the stylesheet already uses for the dock's phone layout.
+ */
+const MOBILE_QUERY = "(max-width: 639px), (pointer: coarse)";
 /** How long after the last scroll the cat keeps "typing". */
 const TYPING_LINGER_MS = 1400;
 /** How long a click keeps the cat pleased. */
@@ -37,11 +42,21 @@ export default function DevCatMascot() {
   // Read the stored preference after mount: reading during render would
   // disagree with the server-rendered markup.
   useEffect(() => {
+    let stored: string | null = null;
     try {
-      setHidden(window.localStorage.getItem(STORAGE_KEY) === "1");
+      stored = window.localStorage.getItem(STORAGE_KEY);
     } catch {
-      // Private mode or blocked storage — fall back to showing the cat.
+      // Private mode or blocked storage — fall back to the device default.
     }
+
+    // A visitor's own choice wins everywhere. Without one, phones start with
+    // the cat put away: the dock is fixed over the content and screen space is
+    // already scarce there.
+    if (stored === "1" || stored === "0") {
+      setHidden(stored === "1");
+      return;
+    }
+    setHidden(window.matchMedia(MOBILE_QUERY).matches);
   }, []);
 
   const setHiddenPersisted = useCallback((next: boolean) => {
