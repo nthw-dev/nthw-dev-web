@@ -12,6 +12,9 @@ const STORAGE_KEY = "devcat-hidden";
 const TYPING_LINGER_MS = 1400;
 /** How long a click keeps the cat pleased. */
 const HAPPY_MS = 2200;
+const MEOW_SRC = "/sounds/meow-cute.m4a";
+/** Kept at 5% so a click is a greeting, not a jump scare. */
+const MEOW_VOLUME = 0.10;
 
 export default function DevCatMascot() {
   const [docked, setDocked] = useState(false);
@@ -22,6 +25,7 @@ export default function DevCatMascot() {
 
   const typingTimer = useRef<number | undefined>(undefined);
   const happyTimer = useRef<number | undefined>(undefined);
+  const meowRef = useRef<HTMLAudioElement | null>(null);
 
   // Lift the splash. The stylesheet fades it out on the same schedule, so the
   // page is never stuck behind it if this component fails to mount.
@@ -71,10 +75,31 @@ export default function DevCatMascot() {
 
   useEffect(() => () => window.clearTimeout(happyTimer.current), []);
 
+  // Built on the client only, and warmed up so the first click is not silent
+  // while the file downloads.
+  useEffect(() => {
+    const audio = new Audio(MEOW_SRC);
+    audio.preload = "auto";
+    audio.volume = MEOW_VOLUME;
+    meowRef.current = audio;
+    return () => {
+      audio.pause();
+      meowRef.current = null;
+    };
+  }, []);
+
   const cheer = () => {
     setHappy(true);
     window.clearTimeout(happyTimer.current);
     happyTimer.current = window.setTimeout(() => setHappy(false), HAPPY_MS);
+
+    const audio = meowRef.current;
+    if (!audio) return;
+    audio.currentTime = 0; // retrigger from the top on a rapid second click
+    audio.volume = MEOW_VOLUME;
+    // Rejected when the browser blocks playback or there is no output device —
+    // the cat still cheers, just silently.
+    void audio.play().catch(() => undefined);
   };
 
   let state: CatState = "idle";
