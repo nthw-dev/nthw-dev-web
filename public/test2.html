@@ -1,0 +1,979 @@
+<title>System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sarabun:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #F3F6F2;
+    --paper-2: #E9EEE8;
+    --ink: #1B2A24;
+    --ink-2: #4A5A52;
+    --muted: #6F7E76;
+    --line: #CDD6CF;
+    --stamp: #B8322F;
+    --stamp-soft: #F5E1DF;
+    --leaf: #2E6B5B;
+    --leaf-soft: #DDEBE5;
+    --code-bg: #EAF0EB;
+    --shadow: 0 1px 0 rgba(27,42,36,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #131A16;
+      --paper-2: #1B2420;
+      --ink: #E4EBE6;
+      --ink-2: #B7C3BC;
+      --muted: #8E9C94;
+      --line: #2C3832;
+      --stamp: #E4706B;
+      --stamp-soft: #3A2423;
+      --leaf: #5FB79C;
+      --leaf-soft: #1E332C;
+      --code-bg: #1A2420;
+      --shadow: none;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #131A16;
+    --paper-2: #1B2420;
+    --ink: #E4EBE6;
+    --ink-2: #B7C3BC;
+    --muted: #8E9C94;
+    --line: #2C3832;
+    --stamp: #E4706B;
+    --stamp-soft: #3A2423;
+    --leaf: #5FB79C;
+    --leaf-soft: #1E332C;
+    --code-bg: #1A2420;
+    --shadow: none;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  a { color: var(--leaf); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
+
+  h1, h2, h3, h4 {
+    font-family: "Chakra Petch", "Sarabun", sans-serif;
+    line-height: 1.25;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -.01em; }
+  h2 { font-size: 1.6rem; font-weight: 700; margin-top: 3.5rem; padding-top: 1.25rem; border-top: 2px solid var(--ink); }
+  h3 { font-size: 1.2rem; font-weight: 600; margin-top: 2rem; }
+  h4 { font-size: 1rem; font-weight: 600; margin-top: 1.5rem; color: var(--ink-2); }
+  p { margin: .9rem 0; max-width: 68ch; }
+  ul, ol { max-width: 68ch; padding-left: 1.4rem; }
+  li { margin: .35rem 0; }
+  li::marker { color: var(--muted); }
+  strong { font-weight: 600; }
+
+  code, pre, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  code {
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: .1em .4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-left: 3px solid var(--leaf);
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-size: .86rem;
+    line-height: 1.55;
+    margin: 1rem 0;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .eyebrow {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--stamp);
+  }
+
+  /* layout */
+  .page {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 5rem;
+  }
+  main { min-width: 0; }
+  nav.toc {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+    font-size: .86rem;
+    line-height: 1.5;
+  }
+  nav.toc .eyebrow { display: block; margin-bottom: .6rem; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; border-left: 1px solid var(--line); }
+  nav.toc li { margin: 0; }
+  nav.toc a {
+    display: block;
+    padding: .28rem 0 .28rem .8rem;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    margin-left: -1px;
+  }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--leaf); }
+  nav.toc .sub { padding-left: 1.6rem; font-size: .8rem; color: var(--muted); }
+  @media (max-width: 860px) {
+    .page { grid-template-columns: 1fr; gap: 1.5rem; }
+    nav.toc { position: static; }
+    nav.toc ol { display: flex; flex-wrap: wrap; gap: .2rem .8rem; border: 0; }
+    nav.toc .sub { display: none; }
+  }
+
+  /* header */
+  header.doc-head { margin-bottom: 1rem; }
+  header.doc-head .eyebrow { display: block; margin-bottom: .7rem; }
+  .lede { font-size: 1.12rem; color: var(--ink-2); max-width: 62ch; }
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem 2rem;
+    margin: 1.5rem 0 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: .88rem;
+  }
+  .meta dt { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; font-family: "Chakra Petch", sans-serif; }
+  .meta dd { margin: .15rem 0 0; }
+
+  /* ticket hero */
+  .ticket {
+    margin: 2rem 0 0;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    padding: 1.2rem 1.4rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem 2rem;
+    align-items: center;
+    max-width: 640px;
+    position: relative;
+  }
+  .ticket .digits { display: flex; gap: .45rem; }
+  .ticket .digit {
+    width: 52px; height: 64px;
+    border: 1.5px solid var(--ink);
+    display: grid; place-items: center;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 2rem; font-weight: 700;
+    background: var(--paper);
+  }
+  .ticket .digit.wild { color: var(--muted); border-style: dashed; font-weight: 500; }
+  .ticket .pos { display: flex; gap: .45rem; margin-top: .35rem; }
+  .ticket .pos span { width: 52px; text-align: center; font-size: .7rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+  .ticket .stamp {
+    font-family: "Chakra Petch", sans-serif;
+    color: var(--stamp);
+    border: 2px solid var(--stamp);
+    padding: .3rem .7rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: .8rem;
+    font-weight: 700;
+    transform: rotate(-6deg);
+    justify-self: end;
+  }
+  .ticket .cap { grid-column: 1 / -1; font-size: .84rem; color: var(--ink-2); margin: 0; }
+  @media (max-width: 560px) {
+    .ticket { grid-template-columns: 1fr; }
+    .ticket .digit { width: 40px; height: 52px; font-size: 1.5rem; }
+    .ticket .pos span { width: 40px; }
+    .ticket .stamp { justify-self: start; }
+  }
+
+  /* decision record */
+  .decision {
+    margin: 1.6rem 0;
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--stamp);
+    background: var(--paper-2);
+  }
+  .decision > .head {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem;
+    padding: .9rem 1.2rem .4rem;
+  }
+  .decision > .head .eyebrow { font-size: .7rem; }
+  .decision > .head h3 { margin: 0; font-size: 1.1rem; }
+  .decision .body { padding: 0 1.2rem 1rem; }
+  .decision .body p { max-width: none; }
+  .decision .pick {
+    margin: .6rem 0 0;
+    padding: .7rem 1rem;
+    background: var(--leaf-soft);
+    border-left: 3px solid var(--leaf);
+    font-weight: 500;
+  }
+  .decision .pick .eyebrow { color: var(--leaf); display: block; margin-bottom: .2rem; }
+
+  /* tables */
+  .tbl-wrap { overflow-x: auto; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; line-height: 1.5; }
+  th, td { text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+  th { font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); border-bottom: 2px solid var(--ink); }
+  td.num { text-align: right; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.pick td { background: var(--leaf-soft); }
+  tr.pick td:first-child { border-left: 3px solid var(--leaf); }
+  .tag { display: inline-block; font-family: "Chakra Petch", sans-serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; padding: .05rem .45rem; border: 1px solid currentColor; border-radius: 2px; }
+  .tag.ok { color: var(--leaf); }
+  .tag.no { color: var(--stamp); }
+  .tag.so { color: var(--muted); }
+
+  /* figures */
+  figure { margin: 1.5rem 0; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); font-family: "Sarabun", sans-serif; }
+  figure svg .mono { font-family: "IBM Plex Mono", monospace; }
+  figure svg .display { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
+  figcaption { font-size: .86rem; color: var(--ink-2); margin-top: .5rem; max-width: 68ch; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* callouts */
+  .note {
+    border-left: 3px solid var(--muted);
+    padding: .2rem 1rem;
+    margin: 1rem 0;
+    color: var(--ink-2);
+    font-size: .95rem;
+    max-width: 68ch;
+  }
+  .note.warn { border-left-color: var(--stamp); }
+  .note .eyebrow { display: block; margin-bottom: .1rem; color: var(--muted); }
+  .note.warn .eyebrow { color: var(--stamp); }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; font-size: .95rem; max-width: 68ch; margin: 1rem 0; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; }
+
+  .faq details { border-bottom: 1px solid var(--line); padding: .6rem 0; max-width: 68ch; }
+  .faq summary { cursor: pointer; font-weight: 600; font-family: "Chakra Petch", sans-serif; }
+  .faq details p { margin: .5rem 0 .2rem; }
+
+  footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .84rem; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="page">
+<nav class="toc" aria-label="สารบัญ">
+  <span class="eyebrow">สารบัญ</span>
+  <ol>
+    <li><a href="#tldr">สรุปการตัดสินใจ</a></li>
+    <li><a href="#req">1. โจทย์และข้อสมมติ</a></li>
+    <li><a href="#insight">2. ข้อสังเกตก่อนออกแบบ</a></li>
+    <li><a href="#model">3. โครงสร้างข้อมูล</a></li>
+    <li><a href="#search">4. การค้นหาและ Index</a></li>
+    <li><a href="#alloc">5. การจัดสรรไม่ให้ซ้ำ</a></li>
+    <li><a href="#arch">6. สถาปัตยกรรมและ Storage</a></li>
+    <li><a href="#perf">7. วิเคราะห์ประสิทธิภาพ</a></li>
+    <li><a href="#ops">8. Scale และการดูแลระบบ</a></li>
+    <li><a href="#tradeoff">9. Tradeoffs</a></li>
+    <li><a href="#faq">10. คำถามที่พบบ่อย</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc-head">
+  <span class="eyebrow">Design Document · ไม่มีการ implement code</span>
+  <h1>Lottery Search System</h1>
+  <p class="lede">ระบบค้นหาสลาก 6 หลักด้วย pattern แบบ wildcard บนข้อมูล 10 ล้านใบ พร้อมกลไกจัดสรรผลลัพธ์ที่รับประกันว่าผู้ใช้หลายคนค้นด้วย pattern เดียวกันพร้อมกันจะไม่ได้สลากใบเดียวกัน</p>
+
+  <dl class="meta">
+    <div><dt>ผู้อ่าน</dt><dd>Junior Backend Developer / System Design</dd></div>
+    <div><dt>ขอบเขต</dt><dd>Architecture, data model, index, concurrency, performance</dd></div>
+    <div><dt>เป้าหมายประสิทธิภาพ</dt><dd>ค้นหา+จอง p99 &lt; 50 ms ที่ 2,000 req/s</dd></div>
+    <div><dt>สถานะ</dt><dd>Proposed · v1</dd></div>
+  </dl>
+
+  <div class="ticket" aria-label="ตัวอย่าง pattern บนสลาก 6 หลัก">
+    <div>
+      <div class="digits">
+        <span class="digit">1</span><span class="digit wild">*</span><span class="digit wild">*</span>
+        <span class="digit wild">*</span><span class="digit wild">*</span><span class="digit">5</span>
+      </div>
+      <div class="pos"><span>d1</span><span>d2</span><span>d3</span><span>d4</span><span>d5</span><span>d6</span></div>
+    </div>
+    <div class="stamp">pattern 1****5</div>
+    <p class="cap">ทุก pattern คือ "เงื่อนไขรายหลัก" ที่ AND กัน: <code>1****5</code> = <code>d1 = 1 AND d6 = 5</code> แนวคิดนี้คือหัวใจของทั้งเอกสาร</p>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<h2 id="tldr">สรุปการตัดสินใจ</h2>
+<p>ถ้ามีเวลาอ่านแค่หน้าเดียว ให้อ่านตารางนี้ ทุกข้อมีเหตุผลและทางเลือกที่ถูกตัดทิ้งอธิบายอยู่ในหัวข้อถัดไป</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>เรื่อง</th><th>ตัดสินใจ</th><th>เหตุผลสั้น ๆ</th></tr></thead>
+  <tbody>
+    <tr><td>Storage หลัก</td><td><strong>PostgreSQL</strong> (single primary + partition ตามงวด)</td><td>ต้องการ transaction + row lock แบบ <code>SKIP LOCKED</code> ในที่เดียวกับที่เก็บข้อมูล ขนาด 10M แถวเล็กพอที่ index ทั้งหมดอยู่ใน RAM</td></tr>
+    <tr><td>วิธีค้นหา wildcard</td><td>แยกเลข 6 หลักเป็นคอลัมน์ <code>d1..d6</code> แล้ว index รายหลัก + composite index สำหรับ pattern ยอดนิยม</td><td>เปลี่ยน wildcard ให้เป็น equality เงื่อนไขธรรมดาที่ B-tree ทำได้ดี ไม่ต้องพึ่ง <code>LIKE</code> หรือ full-text</td></tr>
+    <tr><td>ความหมายของ "ค้นหา"</td><td>ค้นหา = <strong>จองชั่วคราว</strong> (TTL 3 นาที)</td><td>ถ้าแค่ "แสดงผล" โดยไม่จอง จะรับประกันไม่ให้ซ้ำไม่ได้เลย</td></tr>
+    <tr><td>กลไกกันซ้ำ</td><td><code>SELECT … FOR UPDATE SKIP LOCKED</code> + <code>UPDATE</code> ใน transaction เดียว</td><td>atomic ที่ระดับ row ไม่ block กันเอง ไม่ต้องมี distributed lock</td></tr>
+    <tr><td>การกระจายผล</td><td>คอลัมน์ <code>shuffle_key</code> สุ่มไว้ล่วงหน้า + เริ่มอ่านจากจุดสุ่ม</td><td>ผู้ใช้พร้อมกันไม่แย่ง 20 แถวแรกเหมือนกัน ลด lock contention</td></tr>
+    <tr><td>ระดับที่ล็อก</td><td>ล็อก <strong>รายใบ</strong> ไม่ใช่ราย pattern</td><td>ใบเดียวตรงกับ 64 pattern ล็อกราย pattern จึงกันซ้ำข้าม pattern ไม่ได้</td></tr>
+    <tr><td>Phase 2 (เมื่อจำเป็น)</td><td>Roaring bitmap index ใน memory ของ search service</td><td>ทำให้ pattern ที่ไม่มี composite index ตอบใน &lt; 1 ms แต่เพิ่มความซับซ้อน จึงยังไม่ทำใน v1</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="req">1. โจทย์และข้อสมมติ</h2>
+<h3>สิ่งที่โจทย์กำหนด</h3>
+<ul>
+  <li>สลาก <strong>10 ล้านใบ</strong> แต่ละใบเป็นเลข 6 หลัก</li>
+  <li>รับ pattern ยาว 6 ตัวอักษร ประกอบด้วยตัวเลขและ <code>*</code> เช่น <code>****23</code>, <code>1****5</code>, <code>123***</code></li>
+  <li>pattern เดียวกันที่ผู้ใช้หลายคนค้นพร้อมกัน <strong>ต้องไม่ได้สลากใบเดียวกัน</strong></li>
+  <li>ต้องเร็วในระดับ 10M+ แถว และเสนอวิธี query กับ allocation ที่มีประสิทธิภาพ</li>
+</ul>
+
+<h3>สิ่งที่โจทย์ไม่ได้บอก แต่ต้องตัดสินใจเอง</h3>
+<p>โจทย์ระดับ system design มักเว้นช่องว่างไว้ให้เราตั้งข้อสมมติ การเขียนข้อสมมติออกมาให้ชัดสำคัญกว่าการเดาถูก เพราะผู้อ่านจะได้โต้แย้งที่ข้อสมมติ ไม่ใช่ที่ดีไซน์</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ข้อสมมติ</th><th>ค่าที่ใช้</th><th>ทำไมถึงสมมติแบบนี้</th></tr></thead>
+  <tbody>
+    <tr><td>ทำไม 10M ใบ ทั้งที่เลข 6 หลักมีแค่ 1M ค่า</td><td>เลขซ้ำได้ข้าม "ชุด" และ "งวด" เฉลี่ยเลขละ ~10 ใบ</td><td>สอดคล้องกับสลากจริงที่เลขเดียวกันมีหลายชุด</td></tr>
+    <tr><td>ผลลัพธ์ต่อการค้น 1 ครั้ง</td><td>สูงสุด 20 ใบ (page แรก)</td><td>ผู้ใช้ไม่อ่าน 100k ใบ และ LIMIT คือตัวกำหนดต้นทุน query</td></tr>
+    <tr><td>อายุการจองชั่วคราว</td><td>3 นาที ต่ออายุได้เมื่อเข้าหน้าชำระเงิน</td><td>นานพอให้ตัดสินใจ สั้นพอไม่ให้สลากถูก "ดอง"</td></tr>
+    <tr><td>โหลดสูงสุด</td><td>2,000 ค้นหา+จอง/วินาที ช่วงเปิดขายงวดใหม่</td><td>ตัวเลขออกแบบ ต้องยืนยันจากข้อมูลจริงภายหลัง</td></tr>
+    <tr><td>สลากใหม่เข้าระบบอย่างไร</td><td>batch import ครั้งละงวด นอกเวลาขาย</td><td>ทำให้ write ช่วงขายมีแค่การเปลี่ยน status</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="insight">2. ข้อสังเกตก่อนออกแบบ</h2>
+<p>ก่อนเลือกเทคโนโลยี ให้ดู "รูปร่าง" ของข้อมูลก่อน โจทย์นี้มีคุณสมบัติพิเศษสามอย่างที่ทำให้มันง่ายกว่าที่เห็น</p>
+
+<h3>2.1 ค่าที่เป็นไปได้มีแค่ 1 ล้านค่า</h3>
+<p>เลข 6 หลักมีค่าได้ตั้งแต่ <code>000000</code> ถึง <code>999999</code> เท่านั้น ข้อมูล 10M ใบจึงไม่ใช่ "10M ค่าที่ต่างกัน" แต่คือ 1M ค่าที่แต่ละค่ามีหลายใบ ทุกอย่างที่นับต่อ "เลข" จะเล็กกว่าที่นับต่อ "ใบ" 10 เท่า</p>
+
+<h3>2.2 wildcard ตำแหน่งคงที่ ไม่ใช่ wildcard อิสระ</h3>
+<p>pattern ยาว 6 ตัวเสมอ และ <code>*</code> แทน "หลักนี้เป็นอะไรก็ได้" ไม่ใช่ <code>%</code> แบบ SQL ที่ยืดหดได้ ดังนั้น pattern หนึ่งตัว = ชุดเงื่อนไข <em>equality</em> บนหลักที่ระบุ AND กัน นี่คือเหตุผลที่เราไม่ต้องใช้ regex, trigram หรือ full-text search เลย</p>
+<div class="kv">
+  <dt><code>****23</code></dt><dd><code>d5 = 2 AND d6 = 3</code></dd>
+  <dt><code>1****5</code></dt><dd><code>d1 = 1 AND d6 = 5</code></dd>
+  <dt><code>123***</code></dt><dd><code>d1 = 1 AND d2 = 2 AND d3 = 3</code></dd>
+  <dt><code>******</code></dt><dd>ไม่มีเงื่อนไข = ทุกใบ (ต้องมี LIMIT เสมอ)</dd>
+</div>
+
+<h3>2.3 ความ selective คำนวณล่วงหน้าได้</h3>
+<p>ทุกหลักที่ระบุตัวเลข จะตัดผลลัพธ์เหลือ 1/10 โดยประมาณ (สมมติเลขกระจายสม่ำเสมอ) ทำให้เราประเมินต้นทุน query ได้ก่อนรันจริง</p>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>จำนวนหลักที่ระบุ</th><th>ตัวอย่าง</th><th>จำนวนใบที่ตรง (จาก 10M)</th><th>จำนวน pattern แบบนี้ทั้งหมด</th></tr></thead>
+  <tbody>
+    <tr><td class="num">0</td><td><code>******</code></td><td class="num">10,000,000</td><td class="num">1</td></tr>
+    <tr><td class="num">1</td><td><code>*****3</code></td><td class="num">1,000,000</td><td class="num">60</td></tr>
+    <tr><td class="num">2</td><td><code>****23</code></td><td class="num">100,000</td><td class="num">1,500</td></tr>
+    <tr><td class="num">3</td><td><code>123***</code></td><td class="num">10,000</td><td class="num">20,000</td></tr>
+    <tr><td class="num">4</td><td><code>12**45</code></td><td class="num">1,000</td><td class="num">150,000</td></tr>
+    <tr><td class="num">6</td><td><code>123456</code></td><td class="num">~10</td><td class="num">1,000,000</td></tr>
+  </tbody>
+</table>
+</div>
+<p>รวมทุกแบบมี pattern ที่เป็นไปได้ 11<sup>6</sup> = 1,771,561 pattern และสลากหนึ่งใบตรงกับ 2<sup>6</sup> = 64 pattern ตัวเลขนี้จะกลับมาสำคัญตอนตัดสินใจว่าจะ "ล็อกที่ระดับไหน"</p>
+
+<h3>2.4 pattern ไม่ได้ถูกใช้เท่ากัน</h3>
+<p>ในโลกจริงผู้ซื้อสลากค้น "เลขท้าย 2 ตัว" และ "เลขท้าย 3 ตัว" มากที่สุด รองลงมาคือ "เลขหน้า 3 ตัว" ส่วน pattern แบบ <code>1**4*6</code> แทบไม่มีใครใช้ ข้อเท็จจริงนี้ทำให้เราสร้าง composite index เฉพาะทางให้ pattern ยอดนิยมได้ โดยไม่ต้องทำให้ทุก pattern เร็วเท่ากัน</p>
+
+<!-- ============================================================ -->
+<h2 id="model">3. โครงสร้างข้อมูล</h2>
+<p>ตารางเดียวเป็น source of truth ทั้งเรื่อง "มีสลากอะไรบ้าง" และ "ใบไหนถูกจองโดยใคร" การเก็บสองเรื่องนี้ไว้ที่เดียวกันทำให้การค้นหาและการจองเกิดใน transaction เดียวได้ ซึ่งเป็นแกนของการกันซ้ำในหัวข้อ 5</p>
+
+<pre><code>CREATE TABLE tickets (
+  id             bigint GENERATED ALWAYS AS IDENTITY,
+  draw_id        int       NOT NULL,   -- งวด เช่น 20260916
+  number         char(6)   NOT NULL,   -- '123456'
+  set_no         smallint  NOT NULL,   -- ชุดที่ (เลขเดียวกันมีหลายชุด)
+
+  -- แยกหลักเก็บไว้ล่วงหน้า เพื่อให้ wildcard กลายเป็น equality
+  d1 smallint GENERATED ALWAYS AS (substr(number,1,1)::smallint) STORED,
+  d2 smallint GENERATED ALWAYS AS (substr(number,2,1)::smallint) STORED,
+  d3 smallint GENERATED ALWAYS AS (substr(number,3,1)::smallint) STORED,
+  d4 smallint GENERATED ALWAYS AS (substr(number,4,1)::smallint) STORED,
+  d5 smallint GENERATED ALWAYS AS (substr(number,5,1)::smallint) STORED,
+  d6 smallint GENERATED ALWAYS AS (substr(number,6,1)::smallint) STORED,
+
+  shuffle_key    int       NOT NULL,   -- สุ่มตอน import ใช้กระจายผลลัพธ์
+  status         smallint  NOT NULL DEFAULT 0,  -- 0 ว่าง, 1 จองชั่วคราว, 2 ขายแล้ว
+  reserved_by    uuid,
+  reserved_until timestamptz,
+
+  PRIMARY KEY (draw_id, id),
+  UNIQUE (draw_id, number, set_no)
+) PARTITION BY LIST (draw_id);</code></pre>
+
+<h3>ทำไมแต่ละคอลัมน์ถึงอยู่ตรงนั้น</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>คอลัมน์</th><th>หน้าที่</th><th>ทางเลือกที่ไม่ได้ใช้</th></tr></thead>
+  <tbody>
+    <tr><td><code>d1..d6</code></td><td>ให้ B-tree index จับได้โดยตรง เป็น generated column จึงไม่มีทาง "ไม่ตรงกับ number"</td><td>คำนวณ <code>substr()</code> ตอน query แล้วใช้ expression index ก็ได้ แต่อ่านยากกว่าและ planner ประเมิน selectivity แย่กว่า</td></tr>
+    <tr><td><code>shuffle_key</code></td><td>ลำดับสุ่มถาวรของแต่ละใบ ใช้ให้ผู้ใช้พร้อมกันเริ่มอ่านคนละจุด (หัวข้อ 5.3)</td><td><code>ORDER BY random()</code> ต้องอ่านทุก candidate ก่อน sort แพงเกินไปที่ 100k แถว</td></tr>
+    <tr><td><code>status</code> + <code>reserved_until</code></td><td>สถานะการจองอยู่ในแถวเดียวกับสลาก ทำให้ล็อกและเปลี่ยนสถานะ atomic</td><td>ตาราง <code>reservations</code> แยกต่างหาก ต้อง join และล็อกสองที่ เสี่ยง race มากขึ้น</td></tr>
+    <tr><td><code>PARTITION BY LIST (draw_id)</code></td><td>งวดที่ขายอยู่มี partition ของตัวเอง งวดเก่า detach เก็บถาวรได้ทันที ไม่ต้อง DELETE 10M แถว</td><td>ตารางเดียวไม่ partition ก็ทำงานได้ที่ 10M แต่จะโตทุกงวดโดยไม่มีทางลดขนาดง่าย ๆ</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="eyebrow">ขนาดข้อมูลโดยประมาณ</span>
+  แถวละ ~70 byte (รวม header ของ PostgreSQL) × 10M = ~700 MB ต่องวด ยังไม่รวม index ตัวเลขนี้บอกว่าปัญหานี้ "อยู่ใน RAM ได้ทั้งก้อน" บนเครื่อง 16 GB ซึ่งเปลี่ยนวิธีคิดเรื่อง performance ไปเลย</div>
+
+<!-- ============================================================ -->
+<h2 id="search">4. การค้นหาและ Index</h2>
+
+<h3>4.1 อัลกอริทึม: แปลง pattern เป็นเงื่อนไขรายหลัก</h3>
+<ol>
+  <li>ตรวจรูปแบบด้วย regex <code>^[0-9*]{6}$</code> ปฏิเสธถ้าไม่ผ่าน</li>
+  <li>วนทีละตัวอักษร ถ้าเป็นตัวเลขให้เพิ่มเงื่อนไข <code>d&lt;ตำแหน่ง&gt; = &lt;เลข&gt;</code> ถ้าเป็น <code>*</code> ให้ข้าม</li>
+  <li>ได้ WHERE clause ที่มี 0 ถึง 6 เงื่อนไข AND กัน ส่งให้ database พร้อม <code>LIMIT</code></li>
+</ol>
+<p>ความซับซ้อนของขั้นตอนแปลงคือ O(6) ต่อ request ส่วนต้นทุนจริงอยู่ที่ database ว่ามี index รองรับเงื่อนไขชุดนั้นหรือไม่</p>
+
+<figure>
+<svg viewBox="0 0 730 235" role="img" aria-label="pattern 1****5 ถูกแยกเป็นสองเงื่อนไข d1=1 และ d6=5 แต่ละเงื่อนไขมี bitmap ของสลากที่ตรง ผลลัพธ์คือ AND ของสอง bitmap">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="12" y="30" class="mono" font-size="15" fill="currentColor">pattern</text>
+  <text x="80" y="30" class="display" font-size="20" fill="currentColor">1****5</text>
+  <line x1="170" y1="25" x2="235" y2="25" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)"/>
+  <text x="245" y="30" font-size="13" fill="currentColor">แยกเป็นเงื่อนไขรายหลัก แล้วดูว่าใบไหนตรงบ้าง (1 = ตรง)</text>
+
+  <!-- row 1: d1 = 1 -->
+  <text x="12" y="82" class="mono" font-size="13" fill="currentColor">d1 = 1</text>
+  <g transform="translate(170,66)">
+    <rect x="0" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="36" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="72" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="108" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="144" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="180" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="216" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="252" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="288" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="324" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="360" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="396" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="432" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="468" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="504" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <g class="mono" font-size="12" fill="currentColor" text-anchor="middle">
+      <text x="16" y="17">1</text><text x="52" y="17">0</text><text x="88" y="17">0</text><text x="124" y="17">1</text><text x="160" y="17">0</text>
+      <text x="196" y="17">0</text><text x="232" y="17">0</text><text x="268" y="17">1</text><text x="304" y="17">0</text><text x="340" y="17">0</text>
+      <text x="376" y="17">1</text><text x="412" y="17">0</text><text x="448" y="17">0</text><text x="484" y="17">0</text><text x="520" y="17">1</text>
+    </g>
+  </g>
+
+  <!-- row 2: d6 = 5 -->
+  <text x="12" y="126" class="mono" font-size="13" fill="currentColor">d6 = 5</text>
+  <g transform="translate(170,110)">
+    <rect x="0" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="36" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="72" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="108" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="144" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="180" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="216" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="252" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="288" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="324" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="360" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="396" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="432" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="468" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="504" y="0" width="32" height="24" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <g class="mono" font-size="12" fill="currentColor" text-anchor="middle">
+      <text x="16" y="17">1</text><text x="52" y="17">0</text><text x="88" y="17">1</text><text x="124" y="17">0</text><text x="160" y="17">0</text>
+      <text x="196" y="17">0</text><text x="232" y="17">0</text><text x="268" y="17">1</text><text x="304" y="17">0</text><text x="340" y="17">1</text>
+      <text x="376" y="17">0</text><text x="412" y="17">0</text><text x="448" y="17">0</text><text x="484" y="17">0</text><text x="520" y="17">1</text>
+    </g>
+  </g>
+
+  <line x1="170" y1="150" x2="710" y2="150" stroke="currentColor" stroke-width="1.2"/>
+  <text x="12" y="181" class="mono" font-size="13" fill="currentColor" font-weight="600">AND</text>
+
+  <!-- row 3: result -->
+  <g transform="translate(170,164)">
+    <rect x="0" y="0" width="32" height="24" fill="var(--stamp)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="36" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="72" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="108" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="144" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="180" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="216" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="252" y="0" width="32" height="24" fill="var(--stamp)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="288" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="324" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="360" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="396" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="432" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="468" y="0" width="32" height="24" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="504" y="0" width="32" height="24" fill="var(--stamp)" stroke="currentColor" stroke-width=".8"/>
+    <g class="mono" font-size="12" text-anchor="middle" fill="currentColor">
+      <text x="16" y="17" fill="#fff">1</text><text x="52" y="17">0</text><text x="88" y="17">0</text><text x="124" y="17">0</text><text x="160" y="17">0</text>
+      <text x="196" y="17">0</text><text x="232" y="17">0</text><text x="268" y="17" fill="#fff">1</text><text x="304" y="17">0</text><text x="340" y="17">0</text>
+      <text x="376" y="17">0</text><text x="412" y="17">0</text><text x="448" y="17">0</text><text x="484" y="17">0</text><text x="520" y="17" fill="#fff">1</text>
+    </g>
+  </g>
+  <text x="170" y="220" font-size="12" fill="currentColor">ใบที่ 1, 8, 15 คือสลากที่ตรงกับ 1****5</text>
+</svg>
+<figcaption><b>Pattern = AND ของเงื่อนไขรายหลัก</b> ภาพนี้คือสิ่งที่ PostgreSQL ทำภายในเมื่อใช้ Bitmap Index Scan บน index ของ <code>d1</code> และ <code>d6</code> และเป็นสิ่งเดียวกับที่ Roaring bitmap ใน Phase 2 ทำใน memory</figcaption>
+</figure>
+
+<h3>4.2 ทางเลือกของ Index</h3>
+<div class="decision">
+  <div class="head"><span class="eyebrow">Decision 01</span><h3>จะ index เลข 6 หลักอย่างไรให้รองรับ wildcard ทุกตำแหน่ง</h3></div>
+  <div class="body">
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>ทางเลือก</th><th>ทำงานอย่างไร</th><th>ปัญหา</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td>A. <code>LIKE '____23'</code> บน B-tree ของ <code>number</code></td><td>B-tree ใช้ได้เฉพาะ prefix ที่ไม่มี wildcard</td><td><code>123***</code> เร็ว แต่ <code>****23</code> กลายเป็น full scan 10M แถว ซึ่งเป็น pattern ที่คนใช้มากที่สุด</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>B. Trigram (<code>pg_trgm</code>) / regex index</td><td>แตกเป็นชิ้น 3 ตัวอักษรแล้ว GIN index</td><td>ออกแบบมาสำหรับข้อความอิสระ กับตัวเลข 10 ค่า trigram ซ้ำกันมากจน selectivity แย่ และ wildcard ตำแหน่งคงที่ไม่ได้ประโยชน์จากมัน</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>C. Elasticsearch wildcard query</td><td>inverted index + wildcard บน term</td><td>ค้นได้ แต่ทำ atomic reservation ไม่ได้ ต้องกลับมา DB อยู่ดี เพิ่มระบบอีกตัวโดยไม่แก้ปัญหาที่ยากที่สุด</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>D. Precompute ตาราง pattern → รายการใบ</td><td>สร้าง 1.77M pattern key ล่วงหน้า แต่ละใบใส่ใน 64 key</td><td>640M entry ต้องอัปเดต 64 ที่ทุกครั้งที่ใบหนึ่งถูกจอง write amplification สูงเกินไป</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr class="pick"><td>E. คอลัมน์ <code>d1..d6</code> + B-tree รายหลัก + composite สำหรับ pattern ยอดนิยม</td><td>wildcard กลายเป็น equality ธรรมดา planner เลือก composite ถ้ามี ไม่มีก็ Bitmap AND index รายหลัก</td><td>pattern แปลก ๆ ที่ไม่มี composite จะช้ากว่า (หลักสิบ ms) และ insert ต้องอัปเดตหลาย index</td><td><span class="tag ok">เลือก</span></td></tr>
+      <tr><td>F. Roaring bitmap ใน memory (60 bitmap: หลัก × เลข)</td><td>AND bitmap ขนาด 10M bit ได้ใน &lt; 1 ms</td><td>เร็วที่สุด แต่ต้องดูแล state ใน memory ให้ตรงกับ DB เพิ่ม failure mode</td><td><span class="tag so">Phase 2</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="pick"><span class="eyebrow">เลือก E ใน v1 และเตรียมทาง F ไว้</span>
+  เหตุผลหลักคือ E ทำให้การค้นหาและการจองอยู่ใน transaction เดียวกันของ PostgreSQL โดยไม่มี state ที่อื่น ความถูกต้องของข้อกำหนด "ห้ามซ้ำ" จึงพิสูจน์ได้จาก database เพียงตัวเดียว ส่วน F ให้ผลเร็วกว่าแต่ต้องแลกกับการ sync ซึ่งไม่คุ้มจนกว่าจะเห็นว่า E ไม่พอจริง ๆ</div>
+  </div>
+</div>
+
+<h3>4.3 ชุด index ที่สร้าง</h3>
+<pre><code>-- pattern ยอดนิยมได้ composite index ที่ครอบทั้งเงื่อนไขและลำดับ shuffle_key
+CREATE INDEX ix_tail2 ON tickets (d6, d5, shuffle_key)        WHERE status = 0;  -- **** 23
+CREATE INDEX ix_tail3 ON tickets (d6, d5, d4, shuffle_key)    WHERE status = 0;  -- *** 123
+CREATE INDEX ix_head3 ON tickets (d1, d2, d3, shuffle_key)    WHERE status = 0;  -- 123 ***
+
+-- fallback รายหลัก ให้ planner ทำ BitmapAnd สำหรับ pattern อื่น ๆ ทุกรูปแบบ
+CREATE INDEX ix_d1 ON tickets (d1) WHERE status = 0;
+CREATE INDEX ix_d2 ON tickets (d2) WHERE status = 0;
+CREATE INDEX ix_d3 ON tickets (d3) WHERE status = 0;
+CREATE INDEX ix_d4 ON tickets (d4) WHERE status = 0;
+CREATE INDEX ix_d5 ON tickets (d5) WHERE status = 0;
+CREATE INDEX ix_d6 ON tickets (d6) WHERE status = 0;</code></pre>
+
+<p>จุดที่ควรสังเกตสามจุด</p>
+<ul>
+  <li><strong>ทุก index เป็น partial index</strong> (<code>WHERE status = 0</code>) เพราะเราค้นเฉพาะใบว่างเสมอ index จึงเล็กลงเรื่อย ๆ ตามยอดขาย และใบที่ขายแล้วไม่เปลืองพื้นที่ index เลย</li>
+  <li><strong>ลำดับคอลัมน์ใน composite เรียงจากหลักท้ายไปหน้า</strong> สำหรับ <code>ix_tail3</code> เพื่อให้ prefix <code>(d6, d5)</code> ใช้ตอบเลขท้าย 2 ตัวได้ด้วยถ้าจำเป็น แต่เรายังคง <code>ix_tail2</code> ไว้เพราะมันมี <code>shuffle_key</code> ต่อท้ายทันที ทำให้อ่านตามลำดับได้โดยไม่ต้อง sort</li>
+  <li><strong>index ที่อยู่บน partition</strong> จะถูกสร้างต่อ partition โดยอัตโนมัติ งวดที่ขายอยู่จึงมี index ขนาดแค่ 10M แถวเสมอ ไม่ว่าจะเก็บงวดเก่าไว้กี่งวด</li>
+</ul>
+
+<div class="note warn">
+  <span class="eyebrow">ต้นทุนของ partial index</span>
+  เมื่อใบหนึ่งเปลี่ยน status จาก 0 เป็น 1 แถวนั้นจะ "หลุด" ออกจากทั้ง 9 index ซึ่งหมายถึง 9 index write ต่อการจอง 1 ใบ ที่ 2,000 จอง/วินาที × 20 ใบ = 40k แถว/วินาที คือประมาณ 360k index write/วินาที ยังอยู่ในช่วงที่ PostgreSQL บน NVMe รับได้ แต่ถ้าโหลดสูงกว่านี้ให้พิจารณาลด index รายหลักเหลือเฉพาะที่ใช้จริง</div>
+
+<!-- ============================================================ -->
+<h2 id="alloc">5. การจัดสรรไม่ให้ซ้ำ</h2>
+
+<h3>5.1 นิยามปัญหาให้ชัดก่อน</h3>
+<p>โจทย์บอกว่า "pattern เดียวกันต้องไม่คืนใบเดียวกันให้หลายคนพร้อมกัน" มีสองคำที่ต้องตีความ</p>
+<ul>
+  <li><strong>"คืนผล" หมายถึงอะไร</strong> ถ้าแค่แสดงผลบนหน้าจอโดยไม่ยึดไว้ ผู้ใช้สองคนที่ค้นห่างกัน 10 ms จะเห็นใบเดียวกันเสมอ ไม่มีระบบไหนกันได้ ดังนั้นเราต้องนิยามว่า <em>การค้นหาคือการจองชั่วคราว</em> เหมือนใส่ตะกร้าแล้วมีเวลาจ่ายเงิน</li>
+  <li><strong>"pattern เดียวกัน" กว้างพอไหม</strong> ใบ <code>123425</code> ตรงกับทั้ง <code>1****5</code> และ <code>****25</code> ถ้าเรากันซ้ำแค่ภายใน pattern เดียวกัน ผู้ใช้สองคนที่ค้นต่าง pattern ยังได้ใบเดียวกันได้ ซึ่งผิดในเชิงธุรกิจแน่นอน ดังนั้นเราจะกันซ้ำที่ <em>ระดับใบ</em> ซึ่งครอบคลุมข้อกำหนดของโจทย์และเข้มกว่า</li>
+</ul>
+
+<div class="decision">
+  <div class="head"><span class="eyebrow">Decision 02</span><h3>ค้นหาแบบ "ดูอย่างเดียว" หรือ "ค้นแล้วจองทันที"</h3></div>
+  <div class="body">
+  <p><strong>ทางเลือก A: ค้นหาแล้วแสดงผล ผู้ใช้กดจองทีหลัง</strong> UX เรียบง่าย แต่ตอนกดจองมีโอกาสสูงที่ใบถูกคนอื่นจองไปแล้ว โดยเฉพาะเลขยอดนิยม ผู้ใช้จะเจอ "ใบนี้ไม่ว่างแล้ว" ซ้ำ ๆ และข้อกำหนดของโจทย์ไม่ถูกตอบสนอง</p>
+  <p><strong>ทางเลือก B: ค้นหา = จองชั่วคราวทันที มีอายุ 3 นาที</strong> ผลที่แสดงเป็นของผู้ใช้คนนั้นแน่นอนจนกว่าจะหมดเวลาหรือยกเลิก ต้นทุนคือทุกการค้นหาเป็น write และต้องมีกลไกคืนใบที่หมดเวลา</p>
+  <div class="pick"><span class="eyebrow">เลือก B</span>เพราะเป็นทางเดียวที่ทำให้ข้อกำหนด "ไม่ซ้ำพร้อมกัน" เป็นจริงได้ ต้นทุน write เพิ่มขึ้นแต่เรามีตัวเลขในหัวข้อ 7 ยืนยันว่ารับได้ และการค้นหาที่ "แค่นับว่ามีกี่ใบ" ยังทำแบบ read-only ได้แยกต่างหาก</div>
+  </div>
+</div>
+
+<h3>5.2 State ของสลากหนึ่งใบ</h3>
+<figure>
+<svg viewBox="0 0 660 190" role="img" aria-label="สถานะของสลาก: ว่าง ไปเป็น จองชั่วคราว เมื่อค้นหา จองชั่วคราว ไปเป็น ขายแล้ว เมื่อยืนยันชำระเงิน และกลับเป็น ว่าง เมื่อหมดเวลาหรือยกเลิก">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g>
+    <rect x="20" y="55" width="150" height="56" rx="28" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="95" y="79" text-anchor="middle" class="display" font-size="15" fill="currentColor">ว่าง</text>
+    <text x="95" y="98" text-anchor="middle" class="mono" font-size="11" fill="currentColor">status = 0</text>
+  </g>
+  <g>
+    <rect x="255" y="55" width="150" height="56" rx="28" fill="var(--stamp-soft)" stroke="var(--stamp)" stroke-width="1.6"/>
+    <text x="330" y="79" text-anchor="middle" class="display" font-size="15" fill="currentColor">จองชั่วคราว</text>
+    <text x="330" y="98" text-anchor="middle" class="mono" font-size="11" fill="currentColor">status = 1</text>
+  </g>
+  <g>
+    <rect x="490" y="55" width="150" height="56" rx="28" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="565" y="79" text-anchor="middle" class="display" font-size="15" fill="currentColor">ขายแล้ว</text>
+    <text x="565" y="98" text-anchor="middle" class="mono" font-size="11" fill="currentColor">status = 2</text>
+  </g>
+  <line x1="170" y1="76" x2="253" y2="76" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr2)"/>
+  <text x="212" y="66" text-anchor="middle" font-size="12" fill="currentColor">ค้นหา + จอง</text>
+  <line x1="405" y1="76" x2="488" y2="76" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr2)"/>
+  <text x="447" y="66" text-anchor="middle" font-size="12" fill="currentColor">ยืนยันชำระเงิน</text>
+  <path d="M300,111 C300,160 130,160 110,113" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#arr2)"/>
+  <text x="212" y="165" text-anchor="middle" font-size="12" fill="currentColor">หมดเวลา 3 นาที หรือผู้ใช้ยกเลิก</text>
+</svg>
+<figcaption><b>สลากหนึ่งใบมีสามสถานะ</b> เส้นประคือทางกลับที่ทำโดย cleanup job หรือโดยผู้ใช้เอง ไม่มีทางจาก "ขายแล้ว" กลับมา (การคืนสลากเป็นกระบวนการนอกระบบนี้)</figcaption>
+</figure>
+
+<h3>5.3 กลไก: ล็อกแถวแบบข้ามแถวที่ถูกล็อก</h3>
+<div class="decision">
+  <div class="head"><span class="eyebrow">Decision 03</span><h3>จะทำให้ "เลือกใบว่าง แล้วเปลี่ยนเป็นจอง" atomic ได้อย่างไร</h3></div>
+  <div class="body">
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>ทางเลือก</th><th>พฤติกรรมเมื่อ 100 คนค้น <code>****23</code> พร้อมกัน</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td>A. <code>SELECT … FOR UPDATE</code> ธรรมดา</td><td>คนแรกล็อก 20 แถวแรก อีก 99 คน<strong>รอ</strong>แถวเดิมจนคนแรก commit แล้วจึงพบว่าแถวไม่ว่าง ต้อง query ใหม่ latency พุ่งเป็นวินาที</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>B. Optimistic (อ่านก่อน แล้ว <code>UPDATE … WHERE status = 0</code>)</td><td>ทุกคนอ่านชุดเดียวกัน 99 คน update ไม่ติดแถวใดเลย ต้อง retry หลายรอบ กลายเป็น retry storm ตอน pattern ฮิต</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>C. Distributed lock ใน Redis ต่อ pattern</td><td>serialize ทุกคนที่ค้น pattern เดียวกัน ช้าโดยไม่จำเป็น และไม่กันซ้ำข้าม pattern (ใบเดียวอยู่ใน 64 pattern)</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr><td>D. Redis <code>SPOP</code> จาก set ต่อ pattern</td><td>atomic และเร็ว แต่ต้องมี 1.77M set และ pop ใบหนึ่งต้องลบออกจากอีก 63 set นอกจากนี้ Redis กลายเป็น source of truth ตัวที่สอง</td><td><span class="tag no">ตัดทิ้ง</span></td></tr>
+      <tr class="pick"><td>E. <code>SELECT … FOR UPDATE SKIP LOCKED</code> + <code>UPDATE</code> ใน transaction เดียว</td><td>คนแรกล็อก 20 แถว คนที่สอง<strong>ข้าม</strong>แถวที่ถูกล็อกแล้วไปล็อก 20 แถวถัดไปทันที ไม่มีใครรอใคร ไม่มี retry</td><td><span class="tag ok">เลือก</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="pick"><span class="eyebrow">เลือก E</span><code>SKIP LOCKED</code> ถูกออกแบบมาเพื่อ work-queue แบบนี้พอดี: มีของกองหนึ่ง หลายคนมาหยิบ ใครหยิบแล้วคนอื่นไม่เห็น การล็อกอยู่ที่ระดับแถว (ใบ) จึงกันซ้ำข้าม pattern โดยอัตโนมัติ และเพราะทำใน transaction เดียวกับการเปลี่ยน status ทำให้ไม่มีช่วงเวลาที่ "ล็อกแล้วแต่ยังไม่จอง" ให้ crash ได้</div>
+  </div>
+</div>
+
+<figure>
+<svg viewBox="0 0 760 300" role="img" aria-label="ผู้ใช้ A และ B ค้นหา pattern ****23 พร้อมกัน A ล็อกได้สองแถวแรก B ข้ามสองแถวนั้นด้วย SKIP LOCKED แล้วล็อกสองแถวถัดไป ไม่มีใครรอใคร">
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- users -->
+  <rect x="20" y="70" width="140" height="58" fill="var(--stamp-soft)" stroke="var(--stamp)" stroke-width="1.4"/>
+  <text x="90" y="94" text-anchor="middle" class="display" font-size="14" fill="currentColor">ผู้ใช้ A</text>
+  <text x="90" y="114" text-anchor="middle" class="mono" font-size="11" fill="currentColor">****23 · ขอ 2 ใบ</text>
+
+  <rect x="20" y="190" width="140" height="58" fill="var(--leaf-soft)" stroke="var(--leaf)" stroke-width="1.4"/>
+  <text x="90" y="214" text-anchor="middle" class="display" font-size="14" fill="currentColor">ผู้ใช้ B</text>
+  <text x="90" y="234" text-anchor="middle" class="mono" font-size="11" fill="currentColor">****23 · ขอ 2 ใบ</text>
+
+  <!-- table -->
+  <text x="330" y="36" class="display" font-size="13" fill="currentColor">tickets WHERE d5=2 AND d6=3 AND status=0  ORDER BY shuffle_key</text>
+  <g transform="translate(330,48)">
+    <rect x="0" y="0" width="300" height="34" fill="var(--stamp-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="0" y="34" width="300" height="34" fill="var(--stamp-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="0" y="68" width="300" height="34" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="0" y="102" width="300" height="34" fill="var(--leaf-soft)" stroke="currentColor" stroke-width=".8"/>
+    <rect x="0" y="136" width="300" height="34" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <rect x="0" y="170" width="300" height="34" fill="none" stroke="currentColor" stroke-width=".8"/>
+    <g class="mono" font-size="12" fill="currentColor">
+      <text x="12" y="22">418223</text><text x="110" y="22">ชุด 3</text><text x="200" y="22" fill="var(--stamp)">ล็อกโดย A</text>
+      <text x="12" y="56">906123</text><text x="110" y="56">ชุด 1</text><text x="200" y="56" fill="var(--stamp)">ล็อกโดย A</text>
+      <text x="12" y="90">037523</text><text x="110" y="90">ชุด 7</text><text x="200" y="90" fill="var(--leaf)">ล็อกโดย B</text>
+      <text x="12" y="124">551023</text><text x="110" y="124">ชุด 2</text><text x="200" y="124" fill="var(--leaf)">ล็อกโดย B</text>
+      <text x="12" y="158">120023</text><text x="110" y="158">ชุด 5</text><text x="200" y="158">ว่าง</text>
+      <text x="12" y="192">764923</text><text x="110" y="192">ชุด 1</text><text x="200" y="192">ว่าง</text>
+    </g>
+  </g>
+
+  <!-- arrows -->
+  <line x1="160" y1="92" x2="326" y2="82" stroke="var(--stamp)" stroke-width="1.4" marker-end="url(#arr3)"/>
+  <text x="240" y="78" text-anchor="middle" font-size="11" fill="currentColor">FOR UPDATE … LIMIT 2</text>
+  <line x1="160" y1="214" x2="326" y2="150" stroke="var(--leaf)" stroke-width="1.4" marker-end="url(#arr3)"/>
+  <text x="222" y="198" text-anchor="middle" font-size="11" fill="currentColor">SKIP LOCKED</text>
+  <text x="222" y="212" text-anchor="middle" font-size="11" fill="currentColor">ข้าม 2 แถวแรกทันที</text>
+
+  <text x="330" y="278" font-size="12" fill="currentColor">ทั้งสอง transaction ทำงานพร้อมกันและ commit อิสระ ไม่มีใครถูก block</text>
+</svg>
+<figcaption><b>SKIP LOCKED ทำให้คนที่มาทีหลังไม่รอ</b> B ไม่เห็นแถวที่ A กำลังล็อกอยู่ จึงได้ใบถัดไปทันที ถ้า A ยกเลิก transaction แถวสองแถวแรกจะกลับมาว่างให้คนถัดไปโดยอัตโนมัติ</figcaption>
+</figure>
+
+<h3>5.4 Query ที่ใช้จริง (หนึ่ง transaction)</h3>
+<pre><code>-- $1 draw_id, $2 จุดเริ่มสุ่ม (0..2^31), $3 limit, $4 user_id
+-- เงื่อนไข d5 = 2 AND d6 = 3 ถูกประกอบขึ้นจาก pattern โดย application
+WITH picked AS (
+  SELECT id
+  FROM   tickets
+  WHERE  draw_id = $1
+    AND  d5 = 2 AND d6 = 3
+    AND  status = 0
+    AND  shuffle_key &gt;= $2
+  ORDER  BY shuffle_key
+  LIMIT  $3
+  FOR UPDATE SKIP LOCKED
+)
+UPDATE tickets t
+SET    status = 1,
+       reserved_by = $4,
+       reserved_until = now() + interval '3 minutes'
+FROM   picked
+WHERE  t.draw_id = $1 AND t.id = picked.id
+RETURNING t.id, t.number, t.set_no, t.reserved_until;</code></pre>
+
+<p>สิ่งที่แต่ละบรรทัดทำหน้าที่</p>
+<ul>
+  <li><code>status = 0</code> ทำให้ query ใช้ partial index ได้ และไม่ต้องเช็ค <code>reserved_until</code> ใน hot path เพราะ cleanup job (หัวข้อ 8) เป็นคนเปลี่ยนใบหมดเวลากลับเป็น 0</li>
+  <li><code>shuffle_key &gt;= $2</code> คือการกระจายผล: application สุ่ม <code>$2</code> ใหม่ทุก request ผู้ใช้ 100 คนจึงเริ่มอ่านจากคนละจุดใน index ไม่ชนกันที่ 20 แถวแรก ถ้าได้ไม่ครบ limit (สุ่มได้ค่าใกล้ปลาย) ให้ยิงรอบสองด้วย <code>shuffle_key &lt; $2</code></li>
+  <li><code>ORDER BY shuffle_key LIMIT</code> เดินตาม composite index ได้โดยตรง ไม่ต้องดึง 100k แถวมา sort</li>
+  <li><code>FOR UPDATE SKIP LOCKED</code> ต้องอยู่ใน CTE ที่ถูก UPDATE ทันทีใน statement เดียวกัน ทำให้ไม่มีช่วง "ล็อกแล้วรอ application"</li>
+  <li><code>RETURNING</code> คืนผลลัพธ์ในรอบเดียวกัน ไม่ต้อง SELECT ซ้ำ</li>
+</ul>
+
+<h3>5.5 Endpoint ที่เกี่ยวข้อง</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Endpoint</th><th>ทำอะไร</th><th>ลักษณะ</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /reservations</code><br><span style="color:var(--muted);font-size:.85em">{ pattern, limit, idempotency_key }</span></td><td>ค้นหา + จองชั่วคราว คืนรายการใบและเวลาหมดอายุ</td><td>write · ใช้ query ในข้อ 5.4 · idempotent ผ่าน key กัน retry ซ้ำ</td></tr>
+    <tr><td><code>GET /tickets/count?pattern=</code></td><td>บอกว่า "มีประมาณกี่ใบ" ก่อนกดค้น</td><td>read-only · ใช้ <code>count(*)</code> บน partial index หรือ estimate จาก planner ถ้าเกิน 100k</td></tr>
+    <tr><td><code>POST /reservations/{id}/confirm</code></td><td>เปลี่ยน status เป็นขายแล้ว หลังชำระเงินสำเร็จ</td><td><code>UPDATE … WHERE status = 1 AND reserved_by = me AND reserved_until &gt; now()</code> ถ้า affected = 0 คือหมดอายุแล้ว</td></tr>
+    <tr><td><code>DELETE /reservations/{id}</code></td><td>ปล่อยใบที่ไม่เอา</td><td>เปลี่ยนกลับเป็น 0 ทันที ไม่ต้องรอ TTL</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="eyebrow">โควตาต่อผู้ใช้</span>
+  ต้องจำกัดจำนวนใบที่ผู้ใช้หนึ่งคนถือครองในสถานะ "จองชั่วคราว" (เช่น 40 ใบ) มิฉะนั้นคนเดียวยิง 100 request ก็ล็อกเลขท้ายยอดนิยมได้ทั้งงวด ตรวจได้ด้วย counter ใน Redis หรือ <code>count(*) WHERE reserved_by = me</code> ก่อน insert ซึ่งถูกกว่ามากเมื่อเทียบกับ query หลัก</div>
+
+<!-- ============================================================ -->
+<h2 id="arch">6. สถาปัตยกรรมและ Storage</h2>
+
+<div class="decision">
+  <div class="head"><span class="eyebrow">Decision 04</span><h3>เลือก database/storage อะไรสำหรับ production</h3></div>
+  <div class="body">
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>ตัวเลือก</th><th>ค้นหา wildcard</th><th>จอง atomic หลายแถวไม่ block</th><th>ดูแลง่าย</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td><strong>PostgreSQL</strong></td><td>B-tree รายหลัก + BitmapAnd + partial index</td><td><code>SKIP LOCKED</code> + CTE UPDATE ใน statement เดียว</td><td>ทีมส่วนใหญ่คุ้นเคย มี managed service ทุก cloud</td><td><span class="tag ok">เลือก</span></td></tr>
+      <tr><td>MySQL 8 (InnoDB)</td><td>ทำได้เหมือนกัน แต่ไม่มี partial index ต้องใส่ status ใน composite แทน</td><td>มี <code>SKIP LOCKED</code> เช่นกัน</td><td>เทียบเท่า</td><td><span class="tag so">ทางเลือกใกล้เคียง</span> ถ้าทีมถนัด MySQL มากกว่าให้ใช้ได้ ดีไซน์แทบไม่เปลี่ยน</td></tr>
+      <tr><td>Redis เป็นหลัก</td><td>ต้องสร้าง set ต่อ pattern เอง</td><td><code>SPOP</code> atomic แต่ต้อง sync 64 set ต่อใบ</td><td>durability ต้องตั้ง AOF และยอมรับความเสี่ยงข้อมูลหาย</td><td><span class="tag no">ไม่เป็น source of truth</span> ใช้ได้เฉพาะเป็น rate limit / counter</td></tr>
+      <tr><td>Elasticsearch</td><td>wildcard query ทำได้</td><td>ไม่มี row lock ต้องพึ่ง DB อีกตัว</td><td>เพิ่ม cluster ที่ต้องดูแล</td><td><span class="tag no">ตัดทิ้ง</span> แก้ปัญหาที่ง่าย ไม่แก้ปัญหาที่ยาก</td></tr>
+      <tr><td>Cassandra / DynamoDB</td><td>ต้องออกแบบ partition key ต่อ pattern ซึ่งมี 1.77M แบบ</td><td>มี conditional write ต่อแถว แต่ไม่มี "หยิบ N แถวว่างที่ยังไม่ถูกล็อก" ต้อง scan + retry</td><td>scale ได้ไกล แต่โจทย์นี้ 10M แถวไม่ต้องการ</td><td><span class="tag no">ตัดทิ้ง</span> เครื่องมือใหญ่เกินปัญหา</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="pick"><span class="eyebrow">เลือก PostgreSQL</span>
+  ปัญหานี้ "เล็กแต่ต้องถูก" ข้อมูลทั้งหมดอยู่ใน RAM ของเครื่องเดียวได้ ดังนั้นสิ่งที่มีค่าที่สุดคือ transaction ที่ทำให้การค้นหาและการจองเป็นก้อนเดียวกัน ไม่ใช่ความสามารถ scale-out ที่ต้องแลกด้วยการกันซ้ำที่พิสูจน์ยากขึ้น</div>
+  </div>
+</div>
+
+<h3>6.1 ส่วนประกอบของระบบ</h3>
+<figure>
+<svg viewBox="0 0 800 350" role="img" aria-label="Client เรียก API ผ่าน gateway ไปยัง Ticket Service ซึ่งคุยกับ PostgreSQL primary โดยตรง มี cleanup job คืนใบหมดเวลาทุก 10 วินาที และใน Phase 2 มี bitmap index ใน memory ที่รับ logical replication จาก PostgreSQL">
+  <defs>
+    <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- client -->
+  <rect x="30" y="150" width="120" height="56" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="90" y="174" text-anchor="middle" class="display" font-size="14" fill="currentColor">Client</text>
+  <text x="90" y="192" text-anchor="middle" font-size="11" fill="currentColor">web / mobile</text>
+  <!-- api -->
+  <rect x="200" y="150" width="130" height="56" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="265" y="174" text-anchor="middle" class="display" font-size="14" fill="currentColor">API Gateway</text>
+  <text x="265" y="192" text-anchor="middle" font-size="11" fill="currentColor">auth · rate limit</text>
+  <!-- service -->
+  <rect x="390" y="130" width="170" height="96" fill="var(--paper)" stroke="currentColor" stroke-width="1.4"/>
+  <text x="475" y="156" text-anchor="middle" class="display" font-size="14" fill="currentColor">Ticket Service</text>
+  <text x="475" y="176" text-anchor="middle" font-size="11" fill="currentColor">แปลง pattern → WHERE</text>
+  <text x="475" y="192" text-anchor="middle" font-size="11" fill="currentColor">สุ่ม shuffle_key start</text>
+  <text x="475" y="208" text-anchor="middle" font-size="11" fill="currentColor">stateless · scale แนวนอน</text>
+  <!-- pg -->
+  <rect x="630" y="140" width="140" height="76" fill="var(--leaf-soft)" stroke="var(--leaf)" stroke-width="1.6"/>
+  <text x="700" y="166" text-anchor="middle" class="display" font-size="14" fill="currentColor">PostgreSQL</text>
+  <text x="700" y="184" text-anchor="middle" font-size="11" fill="currentColor">primary · source of truth</text>
+  <text x="700" y="200" text-anchor="middle" font-size="11" fill="currentColor">partition ตามงวด</text>
+  <!-- cleanup -->
+  <rect x="390" y="270" width="170" height="52" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="475" y="292" text-anchor="middle" class="display" font-size="13" fill="currentColor">Cleanup Job</text>
+  <text x="475" y="309" text-anchor="middle" font-size="11" fill="currentColor">ทุก 10 วิ: คืนใบหมดเวลา</text>
+  <!-- phase2 -->
+  <rect x="390" y="28" width="170" height="52" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="475" y="50" text-anchor="middle" class="display" font-size="13" fill="currentColor">Bitmap Index (Phase 2)</text>
+  <text x="475" y="67" text-anchor="middle" font-size="11" fill="currentColor">Roaring · ใน memory ของ service</text>
+
+  <!-- arrows -->
+  <line x1="150" y1="178" x2="198" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr4)"/>
+  <text x="174" y="168" text-anchor="middle" font-size="10" fill="currentColor">HTTPS</text>
+  <line x1="330" y1="178" x2="388" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr4)"/>
+  <line x1="560" y1="178" x2="628" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr4)"/>
+  <text x="594" y="168" text-anchor="middle" font-size="10" fill="currentColor">1 tx</text>
+  <path d="M560,296 L700,296 L700,218" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr4)"/>
+  <text x="630" y="288" text-anchor="middle" font-size="10" fill="currentColor">UPDATE status=0</text>
+  <line x1="475" y1="128" x2="475" y2="82" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arr4)"/>
+  <text x="500" y="108" font-size="10" fill="currentColor">AND bitmap → ids</text>
+  <path d="M630,150 L600,150 L600,54 L562,54" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arr4)"/>
+  <text x="604" y="100" font-size="10" fill="currentColor" transform="rotate(-90 604 100)">logical replication</text>
+</svg>
+<figcaption><b>v1 คือเส้นทึบทั้งหมด</b> Ticket Service ไม่มี state จึงเพิ่ม instance ได้ตามใจ ความถูกต้องทั้งหมดถูกบังคับที่ PostgreSQL ตัวเดียว เส้นประคือ Phase 2 ที่เพิ่มเข้ามาโดยไม่เปลี่ยนเส้นทึบเดิม</figcaption>
+</figure>
+
+<h3>6.2 หน้าที่ของแต่ละส่วน</h3>
+<div class="kv">
+  <dt>API Gateway</dt><dd>ตรวจ token, rate limit ต่อผู้ใช้ (เช่น 10 ค้นหา/นาที) ป้องกันการยิงถล่ม pattern ยอดนิยม</dd>
+  <dt>Ticket Service</dt><dd>ตรวจ pattern, ประกอบ SQL, สุ่มจุดเริ่ม, ตรวจโควตา, เรียก transaction ในข้อ 5.4 ไม่เก็บ state ใด ๆ</dd>
+  <dt>PostgreSQL</dt><dd>เก็บสลาก, index, สถานะการจอง และเป็นที่เดียวที่ตัดสินว่าใครได้ใบไหน</dd>
+  <dt>Cleanup Job</dt><dd><code>UPDATE tickets SET status = 0 WHERE status = 1 AND reserved_until &lt; now()</code> ทุก 10 วินาที ใช้ index บน <code>(reserved_until) WHERE status = 1</code></dd>
+  <dt>Redis (เสริม)</dt><dd>counter โควตาต่อผู้ใช้และ rate limit เท่านั้น ถ้า Redis ล่ม ระบบยังจองได้ถูกต้อง แค่โควตาไม่ถูกบังคับชั่วคราว</dd>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="perf">7. วิเคราะห์ประสิทธิภาพ</h2>
+
+<h3>7.1 ขนาดข้อมูลบน disk และ memory</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>รายการ</th><th>ขนาดโดยประมาณ (ต่องวด 10M ใบ)</th><th>หมายเหตุ</th></tr></thead>
+  <tbody>
+    <tr><td>ตาราง tickets</td><td class="num">~700 MB</td><td>แถวละ ~70 byte รวม tuple header</td></tr>
+    <tr><td>composite index × 3</td><td class="num">~3 × 250 MB</td><td>เล็กลงเรื่อย ๆ เมื่อขายออก (partial)</td></tr>
+    <tr><td>index รายหลัก × 6</td><td class="num">~6 × 200 MB</td><td>เล็กลงเรื่อย ๆ เช่นกัน</td></tr>
+    <tr><td><strong>รวมช่วงเริ่มขาย</strong></td><td class="num"><strong>~2.7 GB</strong></td><td>อยู่ใน <code>shared_buffers</code> ของเครื่อง 16 GB ได้ทั้งหมด ไม่มี disk read ใน hot path</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>7.2 ต้นทุนต่อ request แยกตามชนิด pattern</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ชนิด pattern</th><th>Plan ที่ planner เลือก</th><th>งานที่ทำจริง</th><th>latency คาดการณ์</th></tr></thead>
+  <tbody>
+    <tr><td>เลขท้าย 2/3 ตัว, เลขหน้า 3 ตัว</td><td>Index Scan บน composite</td><td>เดิน index ตั้งแต่จุดสุ่ม อ่าน ~20 entry + ล็อก 20 แถว + update</td><td class="num">1–5 ms</td></tr>
+    <tr><td>ระบุ 4–6 หลัก เช่น <code>12**45</code></td><td>BitmapAnd ของ index รายหลัก</td><td>candidate 1,000 ใบหรือน้อยกว่า sort top-20 ในหน่วยความจำ</td><td class="num">2–8 ms</td></tr>
+    <tr><td>ระบุ 2 หลักที่ไม่มี composite เช่น <code>*2**5*</code></td><td>BitmapAnd ของ 2 index</td><td>candidate ~100,000 ใบ ต้อง heap scan แล้ว top-N sort</td><td class="num">20–60 ms</td></tr>
+    <tr><td>ระบุ 1 หลัก / <code>******</code></td><td>Index Scan รายหลัก หรือ Seq Scan + LIMIT</td><td>candidate มหาศาล แต่ LIMIT 20 หยุดเร็วเพราะแทบทุกแถวตรง</td><td class="num">1–3 ms</td></tr>
+  </tbody>
+</table>
+</div>
+<p>แถวที่สามคือจุดอ่อนของ v1 ซึ่งยอมรับได้เพราะเป็น pattern ที่ใช้น้อย และเป็นเหตุผลเดียวที่ Phase 2 (bitmap ใน memory) มีอยู่ ถ้าข้อมูลการใช้งานจริงบอกว่า pattern แบบนี้มีสัดส่วนสูง ให้เพิ่ม composite index สำหรับคู่ที่ฮิตก่อน ซึ่งถูกกว่าการทำ Phase 2 มาก</p>
+
+<h3>7.3 Throughput</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ตัวเลข</th><th>ค่า</th><th>ที่มา</th></tr></thead>
+  <tbody>
+    <tr><td>เป้าหมายค้นหา+จอง</td><td class="num">2,000 req/s</td><td>ข้อสมมติในหัวข้อ 1</td></tr>
+    <tr><td>แถวที่ถูก update</td><td class="num">40,000 แถว/s</td><td>20 ใบ × 2,000</td></tr>
+    <tr><td>transaction เฉลี่ย</td><td class="num">~5 ms</td><td>จากตาราง 7.2 ถ่วงน้ำหนักด้วยสัดส่วน pattern</td></tr>
+    <tr><td>connection ที่ต้องใช้พร้อมกัน</td><td class="num">~10–20</td><td>2,000 × 0.005 s = 10 (Little's law) เผื่อ 2 เท่า</td></tr>
+    <tr><td>PostgreSQL primary เครื่องเดียว (8 vCPU, NVMe)</td><td class="num">~10,000+ tx/s ขนาดนี้</td><td>ประสบการณ์ทั่วไป ต้อง load test ยืนยัน</td></tr>
+  </tbody>
+</table>
+</div>
+<p>ข้อสรุปคือ primary เครื่องเดียวมี headroom ประมาณ 5 เท่าของเป้าหมาย ก่อนที่จะต้องคิดเรื่อง scale-out ในหัวข้อ 8</p>
+
+<h3>7.4 Phase 2: Roaring bitmap ใน memory</h3>
+<p>สำหรับผู้อ่านที่อยากรู้ว่า "เร็วกว่านี้ได้ไหม" คำตอบคือได้ และวิธีคือทำสิ่งเดียวกับที่รูปในหัวข้อ 4.1 แสดง แต่ทำใน memory ของ service เอง</p>
+<ul>
+  <li>เก็บ bitmap 60 ตัว (6 หลัก × 10 เลข) แต่ละตัวยาว 10M bit บอกว่าใบไหนมีเลขนั้นที่หลักนั้น รวม ~75 MB ยังไม่บีบอัด Roaring บีบให้เหลือหลัก MB</li>
+  <li>เก็บ bitmap <code>available</code> อีกหนึ่งตัว อัปเดตจาก logical replication ของ PostgreSQL (หน่วงหลัก ms)</li>
+  <li>pattern → AND bitmap 2–6 ตัว กับ <code>available</code> → ได้ id ที่ตรงในเวลา &lt; 1 ms สุ่มเลือก 20 id</li>
+  <li>ส่ง id เหล่านั้นไป PostgreSQL: <code>… WHERE id = ANY($ids) AND status = 0 FOR UPDATE SKIP LOCKED</code> ซึ่งเป็น primary-key lookup ล้วน ๆ</li>
+</ul>
+<p>สิ่งสำคัญคือ <strong>PostgreSQL ยังเป็นผู้ตัดสินสุดท้าย</strong> bitmap แค่ช่วยหา candidate เร็วขึ้น ถ้า bitmap ล้าหลังเล็กน้อยผลก็แค่ได้ใบน้อยกว่า limit แล้วขอเพิ่ม ไม่มีทางได้ใบซ้ำ นี่คือรูปแบบ "cache ที่ผิดได้โดยไม่ทำให้ระบบผิด" ซึ่งเป็นสิ่งที่ควรมองหาทุกครั้งที่จะเพิ่ม cache</p>
+
+<!-- ============================================================ -->
+<h2 id="ops">8. Scale และการดูแลระบบ</h2>
+
+<h3>8.1 ถ้าโหลดเกิน primary เครื่องเดียว</h3>
+<p>read replica ไม่ช่วยเพราะทุกการค้นหาเป็น write แนวทางที่ถูกคือแบ่งข้อมูลตามสิ่งที่ไม่เกี่ยวกันอยู่แล้ว</p>
+<ul>
+  <li><strong>แยก database ต่องวด</strong> งวดที่กำลังขายกับงวดถัดไปที่ pre-sale อยู่คนละ primary ได้ทันทีเพราะไม่มี transaction ข้ามงวด</li>
+  <li><strong>shard ตาม d6 (หลักสุดท้าย)</strong> ถ้างวดเดียวยังหนักเกิน แบ่งเป็น 10 shard ตามเลขท้าย pattern ที่ระบุ d6 ไปที่ shard เดียว pattern ที่ไม่ระบุ d6 ให้ service สุ่มเลือก shard ก่อน (เพราะยังไงก็ต้องการแค่ 20 ใบ) วิธีนี้รักษาคุณสมบัติ "จองใน transaction เดียว" ไว้ได้เพราะ 20 ใบมาจาก shard เดียวเสมอ</li>
+</ul>
+
+<h3>8.2 งานประจำ</h3>
+<div class="kv">
+  <dt>Cleanup job</dt><dd>ทุก 10 วินาที คืนใบหมดเวลา ทำเป็น batch ครั้งละ 5,000 แถวเพื่อไม่ล็อกนาน ถ้า job ตาย ใบจะค้าง "จอง" นานสุดเท่ากับเวลาที่ job หยุด ต้องมี alert</dd>
+  <dt>Import งวดใหม่</dt><dd>สร้าง partition ใหม่ <code>COPY</code> 10M แถวพร้อม <code>shuffle_key</code> ที่สุ่มแล้ว จากนั้นค่อยสร้าง index (เร็วกว่าสร้าง index ก่อนหลายเท่า) ใช้เวลาหลักนาที</dd>
+  <dt>ปิดงวด</dt><dd><code>DETACH PARTITION</code> แล้วย้ายไป archive ตารางหลักไม่โต</dd>
+  <dt>VACUUM</dt><dd>ทุกการจองสร้าง dead tuple ตั้ง autovacuum ให้ดุกว่าค่า default บน partition ที่ขายอยู่</dd>
+</div>
+
+<h3>8.3 สิ่งที่ต้องมีบน dashboard</h3>
+<ul>
+  <li>p50/p99 ของ <code>POST /reservations</code> แยกตามจำนวนหลักที่ระบุ ถ้า p99 ของกลุ่ม "2 หลักไม่มี composite" พุ่ง คือสัญญาณให้เพิ่ม index หรือเริ่ม Phase 2</li>
+  <li>จำนวนใบในสถานะ 1 (จองชั่วคราว) ถ้าสูงผิดปกติแปลว่า cleanup ตาย หรือมีคนถือครองเกินโควตา</li>
+  <li>อัตรา request ที่ได้ใบน้อยกว่า limit บอกว่า pattern นั้นใกล้หมด ใช้แจ้ง UI ได้</li>
+  <li>lock wait ใน PostgreSQL ควรเป็นศูนย์เกือบตลอด ถ้าไม่ใช่แปลว่ามี query ที่ไม่ได้ใช้ <code>SKIP LOCKED</code> หลุดเข้ามา</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="tradeoff">9. Tradeoffs และสิ่งที่ตั้งใจไม่ทำ</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>สิ่งที่ยอมแลก</th><th>ได้อะไรมา</th><th>เสียอะไรไป</th></tr></thead>
+  <tbody>
+    <tr><td>ค้นหา = จอง</td><td>ไม่ซ้ำแน่นอน UX ชัดเจน</td><td>ทุกการค้นหาเป็น write และใบอาจถูก "ถือ" ไว้โดยคนที่ไม่ซื้อ 3 นาที</td></tr>
+    <tr><td>partial index 9 ตัว</td><td>ทุก pattern ตอบได้จาก index ไม่มี full scan</td><td>write amplification ต่อการจอง และ import ต้องสร้าง index หลังโหลด</td></tr>
+    <tr><td>คืนใบด้วย cleanup job แทนเช็ค TTL ใน query</td><td>query หลักเรียบง่าย ใช้ partial index ได้เต็มที่</td><td>ใบหมดเวลาอาจ "หายไป" นานสุด 10 วินาทีก่อนกลับมาว่าง</td></tr>
+    <tr><td>PostgreSQL เครื่องเดียวเป็นผู้ตัดสิน</td><td>ความถูกต้องพิสูจน์ง่าย ไม่มี distributed consensus</td><td>เพดาน throughput อยู่ที่เครื่องเดียว ต้อง shard เมื่อโตเกินหัวข้อ 8.1</td></tr>
+    <tr><td>ไม่ทำ Phase 2 ใน v1</td><td>ระบบมี moving part น้อย เข้าใจได้ทั้งระบบในเอกสารเดียว</td><td>pattern แปลก ๆ ช้ากว่า pattern ยอดนิยม 10 เท่า</td></tr>
+    <tr><td>ไม่ใช้ Redis เป็น source of truth</td><td>ไม่มีปัญหา DB กับ cache ไม่ตรงกัน</td><td>latency ต่ำสุดที่ทำได้จำกัดที่ PostgreSQL round-trip (หลัก ms ไม่ใช่หลัก µs)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="faq">10. คำถามที่พบบ่อยจาก Junior</h2>
+<div class="faq">
+  <details open>
+    <summary>ทำไมไม่เก็บ number เป็น integer แล้วใช้ math เช่น <code>number % 100 = 23</code></summary>
+    <p>ทำได้ และบางคนชอบเพราะไม่ต้องมี 6 คอลัมน์ แต่ B-tree index บน <code>number</code> ใช้กับ <code>number % 100</code> ไม่ได้ ต้องสร้าง expression index ต่อ pattern อยู่ดี ท้ายที่สุดจำนวน index เท่ากันแต่อ่านยากกว่า คอลัมน์ <code>d1..d6</code> ที่เป็น generated column ให้ผลเหมือนกันโดยที่ query ตรงไปตรงมา</p>
+  </details>
+  <details>
+    <summary>ถ้า application crash หลังจาก UPDATE แต่ก่อนส่งผลให้ผู้ใช้ จะเกิดอะไร</summary>
+    <p>ใบถูกจองไว้ในชื่อผู้ใช้คนนั้นโดยที่เขาไม่รู้ และจะกลับเป็นว่างเองใน 3 นาทีผ่าน cleanup job นี่คือเหตุผลที่ TTL ต้องมีเสมอ และเหตุผลที่ request ควรมี <code>idempotency_key</code> เพื่อให้ client retry แล้วได้ชุดเดิมกลับไปแทนที่จะจองเพิ่ม</p>
+  </details>
+  <details>
+    <summary><code>SKIP LOCKED</code> ต่างจาก <code>NOWAIT</code> อย่างไร</summary>
+    <p><code>NOWAIT</code> จะ error ทันทีถ้าแถวใดแถวหนึ่งถูกล็อก ส่วน <code>SKIP LOCKED</code> จะข้ามแถวนั้นไปเงียบ ๆ แล้วหาแถวถัดไป สำหรับงานแบบ "ขอใบไหนก็ได้ที่ว่าง" เราต้องการอย่างหลัง</p>
+  </details>
+  <details>
+    <summary>ทำไมต้องสุ่ม <code>shuffle_key</code> ในเมื่อ <code>SKIP LOCKED</code> ก็กันซ้ำอยู่แล้ว</summary>
+    <p>กันซ้ำได้ก็จริง แต่ถ้าทุกคนเริ่มอ่านจากแถวแรกเหมือนกัน คนที่ 50 ต้องเดินข้ามแถวที่ถูกล็อก 49 × 20 แถวก่อนจะเจอของตัวเอง ทุก request ช้าลงตามจำนวนคนที่มาก่อน การสุ่มจุดเริ่มทำให้แต่ละคนเจอแถวว่างแทบจะทันที นอกจากนี้ยังทำให้ผู้ใช้ไม่ได้เห็น "ชุด 1 เสมอ" ซึ่งดีต่อความรู้สึกว่าระบบยุติธรรม</p>
+  </details>
+  <details>
+    <summary>ถ้าใช้ <code>SERIALIZABLE</code> isolation แทน จะง่ายกว่าไหม</summary>
+    <p>ถูกต้องเหมือนกัน แต่ทุก transaction ที่ชนกันจะถูก abort แล้วต้อง retry ซึ่งบน pattern ยอดนิยมจะ abort เป็นส่วนใหญ่ <code>SKIP LOCKED</code> ทำงานที่ <code>READ COMMITTED</code> ค่า default และไม่มี retry เลย เป็นเครื่องมือที่ตรงกับปัญหามากกว่า</p>
+  </details>
+  <details>
+    <summary>จะทดสอบว่า "ไม่ซ้ำ" จริงได้อย่างไร</summary>
+    <p>เขียน load test ที่ยิง 500 client พร้อมกันด้วย pattern เดียวกัน เก็บทุก id ที่ได้กลับมา แล้ว assert ว่าไม่มี id ซ้ำในช่วงเวลาที่ reservation ยังไม่หมดอายุ ทำซ้ำกับ pattern ที่ทับซ้อนกัน (<code>1****5</code> กับ <code>****25</code>) เพื่อยืนยันว่ากันซ้ำข้าม pattern ด้วย นี่คือ test ที่สำคัญที่สุดของระบบ ควรรันใน CI ทุกครั้งที่แก้ query</p>
+  </details>
+</div>
+
+<footer>
+  เอกสารนี้เป็น design proposal ตอบโจทย์ Lottery Search System ตัวเลข latency และ throughput เป็นค่าประมาณจากขนาดข้อมูลและประสบการณ์ทั่วไป ต้องยืนยันด้วย load test บนเครื่องจริงก่อนตัดสินใจเรื่อง capacity
+</footer>
+</main>
+</div>
