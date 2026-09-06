@@ -1,0 +1,41 @@
+/**
+ * Scoped base styles for the resume system under /resume.
+ *
+ * The portfolio's root layout is a dark theme (see globals.css), but the resume
+ * is a print document and has to render on white. Everything here is keyed off
+ * `.resume-root`, which only the /resume layout renders, so the portfolio pages
+ * are untouched.
+ */
+
+.resume-root {
+  color-scheme: light;
+  color: #1f2937;
+  /* The portfolio sets --font-sans to Geist, but the resume is a fixed-height
+     A4 sheet whose line breaks were tuned against the plain system stack.
+     Pin that stack here so the layout keeps fitting on one page. */
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* The dark page background is painted on <body> by globals.css, which would
+   otherwise show through around the A4 sheet — on screen below the fold and,
+   with printBackground, in the generated PDF. Neutralise it for resume routes
+   only. */
+html:has(.resume-root) {
+  color-scheme: light;
+}
+
+body:has(.resume-root) {
+  background-color: #fff;
+}
+
+/* The reveal/rise animations are armed by the `js` class on <html> and are
+   meant for the portfolio; keep them out of a document that gets screenshotted. */
+.resume-root .reveal,
+.resume-root .rise {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}

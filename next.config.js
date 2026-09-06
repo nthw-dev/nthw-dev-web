@@ -5,6 +5,10 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  // @sparticuz/chromium ships a Chromium binary for the /resume PDF route and
+  // must stay out of the server bundle.
+  serverExternalPackages: ["@sparticuz/chromium"],
+};
 
 export default config;
