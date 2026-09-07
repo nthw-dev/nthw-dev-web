@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="Natthawat_Narin_CV.pdf"',
+        'Content-Disposition': 'attachment; filename="Resume_Natthawat_Narin.pdf"',
         'Content-Length': pdfBuffer.length.toString(),
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },

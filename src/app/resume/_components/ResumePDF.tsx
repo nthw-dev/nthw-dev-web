@@ -2,7 +2,7 @@ import React from 'react';
 import { Phone, Mail, MapPin, Globe, CodeXml, PanelsTopLeft, Smartphone, Server, Database, Workflow, FlaskConical, Cloud } from 'lucide-react';
 // lucide-react v1 dropped brand marks, so the LinkedIn glyph comes from the
 // portfolio's own icon set.
-import { LinkedInIcon } from '~/app/_components/icons';
+import { GitHubIcon, LinkedInIcon } from '~/app/_components/icons';
 
 const Tech = ({ children }: { children: React.ReactNode }) => (
   <span className="text-emerald-700">{children}</span>
@@ -29,9 +29,13 @@ export default function ResumePDF() {
                 <Mail size={12} />
                 <span>tah.nthw@gmail.com</span>
               </div>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <LinkedInIcon size={12} />
                 <a href="https://www.linkedin.com/in/tah-natthawat/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-100">tah-natthawat</a>
+              </div> */}
+              <div className="flex items-center gap-2">
+                <GitHubIcon size={12} />
+                <a href="https://github.com/nthw-dev" target="_blank" rel="noopener noreferrer" className="hover:text-blue-100">github.com/nthw-dev</a>
               </div>
               <div className="flex items-center gap-2">
                 <Globe size={12} />
@@ -70,7 +74,7 @@ export default function ResumePDF() {
                 <p className="text-blue-600 text-xs font-medium flex items-center gap-1">Arise by Infinitas Co., Ltd. <span className="text-gray-500 font-normal">(<b>Outsource</b> via GetLinks &rarr; N7 Labs)</span> <MapPin size={10} className="ml-1" /> Bangkok, Thailand</p>
                 <p className="text-xs mt-1 text-gray-700"><b>Projects:</b> digital lending platforms for a <b>leading Thai commercial bank</b> and a <b>new virtual bank</b></p>
                 <ul className="text-xs mt-1 space-y-0.5 text-gray-700">
-                  <li>• Build <b>30+</b> RESTful API endpoints in <Tech>Go</Tech> (<Tech>Gin</Tech>, <Tech>Bun</Tech>, <Tech>PostgreSQL</Tech>, <Tech>AWS S3</Tech>, <Tech>Redis</Tech>, <Tech>gotenberg</Tech>) for bill generation, reminder, and repayment flows</li>
+                  <li>• Build <b>30+</b> RESTful API endpoints in <Tech>Go</Tech> (<Tech>Gin</Tech>, <Tech>Bun</Tech>, <Tech>PostgreSQL</Tech>, <Tech>AWS S3</Tech>, <Tech>Redis</Tech>, <Tech>Gotenberg</Tech>) for bill generation, reminder, and repayment flows</li>
                   <li>• Build <b>14+</b> <Tech>Kafka</Tech> consumers to process billing and repayment events asynchronously</li>
                   <li>• Build <b>4</b> <Tech>Airflow</Tech> DAGs to schedule recurring bill reminder jobs, with <Tech>AWS S3</Tech> for document storage</li>
                   <li>• Write unit and integration tests, maintaining test coverage above <b>80%</b></li>
@@ -91,7 +95,7 @@ export default function ResumePDF() {
                   <li>• <b><a href="https://metanetcorporation.com/portfolio-item/smart-hire-ai/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">Smart Hire AI</a></b> — hiring platform where candidates answer interview questions and the <Tech>ChatGPT API</Tech> analyzes their responses, built in <Tech>Next.js</Tech> and <Tech>Tailwind CSS</Tech>, running all server-side logic in the app itself rather than a separate API service, for faster development</li>
                   <li>• <b>North HR</b> — an employee management system built as a <Tech>Flutter</Tech> mobile app, a <Tech>Next.js</Tech> back-office (<Tech>Tailwind CSS</Tech>), and a <Tech>NestJS</Tech> API (<Tech>Prisma</Tech>, <Tech>PostgreSQL</Tech>) exposing <b>50+</b> RESTful API endpoints: location-based check-in/check-out via the <Tech>Google Maps API</Tech>, push notifications through <Tech>Firebase Cloud Messaging</Tech>, and file storage on <Tech>AWS S3</Tech> with e-signed documents viewable by link</li>
                   <li>• <b><a href="https://giftme.tech/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">GiftMe</a></b> — donation platform for streamers, with SCB bank QR code payment integration, built in <Tech>Next.js</Tech> with a <Tech>NestJS</Tech> backend exposing <b>40+</b> RESTful endpoints</li>
-                  <li>• Deployed all four with <Tech>Docker</Tech> behind <Tech>Nginx Proxy Manager</Tech>, delivered by <Tech>GitHub Actions</Tech> to <Tech>AWS</Tech>, <Tech>DigitalOcean</Tech>, or <Tech>Firebase App Distribution</Tech> for mobile deployment</li>
+                  <li>• Deployed all of them with <Tech>Docker</Tech> behind <Tech>Nginx Proxy Manager</Tech>, delivered by <Tech>GitHub Actions</Tech> to <Tech>AWS</Tech>, <Tech>DigitalOcean</Tech>, or <Tech>Firebase App Distribution</Tech> for mobile deployment</li>
                 </ul>
               </div>
 
@@ -165,14 +169,14 @@ export default function ResumePDF() {
                   <Server size={12} className="text-blue-700" />
                   <h4 className="font-semibold text-xs text-blue-700">Backend & API</h4>
                 </div>
-                <p className="text-xs text-gray-700">Go (Gin, Fiber), Node.js (Fastify, NestJS), Python (Django), Kotlin (Spring Boot)</p>
+                <p className="text-xs text-gray-700">Go (Gin, Fiber), Node.js (Fastify, NestJS), Python (Django), Kotlin (Spring Boot), GraphQL, gRPC</p>
               </div>
               <div className="bg-white p-2 rounded shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
                   <FlaskConical size={12} className="text-blue-700" />
                   <h4 className="font-semibold text-xs text-blue-700">Testing Tools</h4>
                 </div>
-                <p className="text-xs text-gray-700">Go (Testify, Mockery, Ginkgo, Gomega), TypeScript (Jest, Playwright)</p>
+                <p className="text-xs text-gray-700">Go (Testify, Mockery, Ginkgo, Gomega), TypeScript (Jest, Playwright), k6</p>
               </div>
               <div className="bg-white p-2 rounded shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
@@ -184,9 +188,9 @@ export default function ResumePDF() {
               <div className="bg-white p-2 rounded shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
                   <Workflow size={12} className="text-blue-700" />
-                  <h4 className="font-semibold text-xs text-blue-700">Message Queues</h4>
+                  <h4 className="font-semibold text-xs text-blue-700">Messaging &amp; Data</h4>
                 </div>
-                <p className="text-xs text-gray-700">Kafka, RabbitMQ, AWS SQS</p>
+                <p className="text-xs text-gray-700">Kafka, RabbitMQ, AWS SQS, Airflow, Spark SQL</p>
               </div>
               <div className="bg-white p-2 rounded shadow-sm">
                 <div className="flex items-center gap-2 mb-1">

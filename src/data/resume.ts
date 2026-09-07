@@ -10,15 +10,15 @@ export const profile = {
   email: "tah.nthw@gmail.com",
   website: "nthw.dev",
   websiteUrl: "https://nthw.dev",
-  linkedin: "linkedin.com/in/ta-natthawat",
-  linkedinHandle: "in/ta-natthawat",
-  linkedinUrl: "https://www.linkedin.com/in/ta-natthawat/",
+  linkedin: "linkedin.com/in/tah-natthawat",
+  linkedinHandle: "in/tah-natthawat",
+  linkedinUrl: "https://www.linkedin.com/in/tah-natthawat/",
   line: "na10tthawat",
   lineQr: "/lineID_na10tthawat.JPG",
   github: "github.com/nthw-dev",
   githubHandle: "nthw-dev",
   githubUrl: "https://github.com/nthw-dev",
-  resumeUrl: "/Natthawat_Narin_Resume.pdf",
+  resumeUrl: "/Resume_Natthawat_Narin.pdf",
   avatar: "/images/profile.jpeg",
 } as const;
 
@@ -64,19 +64,12 @@ export type Experience = {
 export const experiences: Experience[] = [
   {
     role: "Senior Backend Developer",
-    company: "Prior Solution Co., Ltd.",
+    company: "Arise by Infinitas Co., Ltd. (Outsource via GetLinks → N7 Labs)",
     place: "Bangkok, Thailand",
     period: "01/2025 — Present",
     current: true,
     context:
-      "Digital lending platforms for **Krungthai NEXT** and **CLICX Bank** — billing, reminders, and repayment at national bank scale.",
-    links: [
-      {
-        label: "Krungthai NEXT",
-        url: "https://krungthai.com/th/content/personal/krungthai-next",
-      },
-      { label: "CLICX Bank", url: "https://www.clicxbank.com/th/personal" },
-    ],
+      "Digital lending platforms for a **leading Thai commercial bank** and a **new virtual bank** — billing, reminders, and repayment at national bank scale.",
     highlights: [
       "Built **30+ RESTful API endpoints** in Go (Gin, Bun, PostgreSQL, AWS S3, Redis, Gotenberg) for bill generation, reminder, and repayment flows.",
       "Built **14+ Kafka consumers** processing billing and repayment events asynchronously.",
@@ -98,8 +91,8 @@ export const experiences: Experience[] = [
     ],
   },
   {
-    role: "Freelance Full-Stack Developer",
-    company: "AATECH SOLUTION CO., LTD.",
+    role: "Senior Full-Stack Developer",
+    company: "AATECH SOLUTION CO., LTD. (Freelance)",
     place: "Remote (100%)",
     remote: true,
     period: "02/2024 — 12/2024",
@@ -134,7 +127,7 @@ export const experiences: Experience[] = [
   },
   {
     role: "Full-Stack Developer",
-    company: "Xspring Digital Co., Ltd.",
+    company: "Xspring Digital Co., Ltd. (Full-time)",
     place: "Bangkok, Thailand",
     period: "05/2022 — 10/2023",
     context:
@@ -172,11 +165,11 @@ export const experiences: Experience[] = [
   },
   {
     role: "Full-Stack Developer",
-    company: "Blockfint Co., Ltd.",
+    company: "Blockfint Co., Ltd. (Full-time)",
     place: "Bangkok, Thailand",
     period: "08/2021 — 04/2022",
     context:
-      "**Thinker Loan** — home and personal loan platform for **Kiatnakin Phatra Bank (KKP)**.",
+      "**Thinker Loan** — home and personal loan platform for a **Thai commercial bank**.",
     highlights: [
       "Built RESTful microservices in Go (net/http), exposed through GraphQL with gRPC.",
       "Built a **real-time chat system** in the Next.js web app over WebSocket.",
@@ -184,8 +177,8 @@ export const experiences: Experience[] = [
     stack: ["Go", "GraphQL", "gRPC", "Next.js", "WebSocket"],
   },
   {
-    role: "Full-Stack Developer Internship",
-    company: "Odd-e Thailand",
+    role: "Full-Stack Developer",
+    company: "Odd-e (Thailand) Co., Ltd. (Internship)",
     place: "Bangkok, Thailand",
     period: "03/2021 — 08/2021",
     context:

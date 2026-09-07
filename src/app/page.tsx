@@ -25,7 +25,13 @@ const personSchema = {
     addressCountry: "TH",
   },
   alumniOf: { "@type": "CollegeOrUniversity", name: education.school },
-  worksFor: { "@type": "Organization", name: experiences[0]?.company },
+  // `company` carries the engagement type in parentheses for display
+  // ("… (Freelance)", "… (Outsource via …)"); an Organization name should be
+  // the employer alone, so the parenthetical is dropped here.
+  worksFor: {
+    "@type": "Organization",
+    name: experiences[0]?.company.replace(/\s*\(.*\)$/, ""),
+  },
   knowsAbout: skills.flatMap((g) => g.items),
 };
 
