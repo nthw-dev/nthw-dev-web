@@ -39,3 +39,22 @@ body:has(.resume-root) {
   transform: none;
   animation: none;
 }
+
+/* The A4 sheet keeps its 210mm × 297mm layout on every screen; on phones and on
+   an iPad in portrait it is scaled down to the viewport width instead of
+   reflowing, so the page still reads as the printed document. The wrapper is
+   sized to the scaled result so nothing overflows sideways.
+   Printing (and the Puppeteer PDF route, which renders /resume/cv-preview
+   without the scaler) must always get the sheet at 1:1. */
+@media print {
+  .resume-sheet-frame,
+  .resume-sheet-box {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .resume-sheet {
+    transform: none !important;
+  }
+}

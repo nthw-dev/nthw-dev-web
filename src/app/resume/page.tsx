@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Download, LoaderCircle } from 'lucide-react';
 import ResumePDF from './_components/ResumePDF';
+import ResumeSheetScaler from './_components/ResumeSheetScaler';
 
 export default function CVPreviewPage() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -46,34 +47,39 @@ export default function CVPreviewPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Controls - Hidden when printing */}
-      <div className="print:hidden bg-white shadow-lg p-4 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <button
-            onClick={handleExportPDF}
-            disabled={isGenerating}
-            className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isGenerating ? (
-              <>
-                <LoaderCircle size={20} className="animate-spin" />
-                Generating PDF...
-              </>
-            ) : (
-              <>
-                <Download size={20} />
-                Export PDF
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      {/*
+        Controls — a floating action button rather than a toolbar. A sticky bar
+        would eat ~72px of a phone screen for a single button, and the point of
+        this page is to show the A4 sheet as large as possible. Bottom-right
+        keeps it in thumb reach on mobile and off the sheet's content on a desk.
+        The safe-area inset keeps it clear of the iPhone home indicator.
+        Hidden when printing.
+      */}
+      <button
+        onClick={handleExportPDF}
+        disabled={isGenerating}
+        aria-label="Export resume as PDF"
+        style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}
+        className="print:hidden fixed right-5 sm:right-8 z-20 flex items-center gap-2 rounded-full bg-green-600 px-5 py-3 text-sm sm:text-base font-medium text-white shadow-lg shadow-green-900/25 ring-1 ring-green-700/50 transition-all duration-200 hover:bg-green-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:translate-y-0 disabled:bg-gray-400 disabled:shadow-md disabled:ring-gray-500/40 disabled:cursor-not-allowed"
+      >
+        {isGenerating ? (
+          <>
+            <LoaderCircle size={18} className="animate-spin" />
+            Generating PDF...
+          </>
+        ) : (
+          <>
+            <Download size={18} />
+            Export PDF
+          </>
+        )}
+      </button>
 
-      {/* CV Preview */}
-      <div className="py-8 print:py-0">
-        <div className="flex justify-center">
+      {/* CV Preview — full-bleed on small screens, centred on a desk. */}
+      <div className="py-0 lg:py-8 print:py-0">
+        <ResumeSheetScaler>
           <ResumePDF />
-        </div>
+        </ResumeSheetScaler>
       </div>
 
       <style jsx>{`
