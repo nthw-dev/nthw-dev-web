@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NorthHR Overview</title>
+<meta name="description" content="เอกสารนำเสนอระบบ NorthHR: hr_mobile, hr-api และ hr-bo — เทคโนโลยี บริการภายนอก ฟีเจอร์ และภาพหน้าจอ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7fb;--surface:#ffffff;--surface-2:#eef1f7;--text:#1a1f2e;--muted:#5b6478;--line:#dfe3ec;
+  --brand:#1e2a5a;--brand-soft:#e6eaf7;--accent:#2f6df6;
+  --mobile:#0ea5a4;--mobile-soft:#dff6f5;--api:#d97706;--api-soft:#fdf0d9;--web:#7c3aed;--web-soft:#ede6fc;
+  --deploy:#0f766e;--deploy-soft:#d9f2ee;--uat:#0f766e;--uat-soft:#d9f2ee;--cf:#e7862b;--cf-soft:#fdeedd;--line-2:#c9cfd9;--prod:#b91c1c;--prod-soft:#fde4e4;--local:#2563eb;--local-soft:#dbe7ff;--ok:#16a34a;--shadow:0 1px 2px rgba(20,25,45,.06),0 8px 24px rgba(20,25,45,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1320;--surface:#171c2c;--surface-2:#1f2537;--text:#e7eaf3;--muted:#9aa3b8;--line:#2a3147;
+    --brand:#aab8f0;--brand-soft:#232b48;--accent:#6c9cff;
+    --mobile:#2dd4bf;--mobile-soft:#123332;--api:#fbbf24;--api-soft:#3a2c10;--web:#b28bff;--web-soft:#2a1f45;
+    --deploy:#5eead4;--deploy-soft:#113a36;--uat:#5eead4;--uat-soft:#113a36;--cf:#f0a05a;--cf-soft:#3d2a16;--line-2:#3a425a;--prod:#f87171;--prod-soft:#3d1a1a;--local:#93c5fd;--local-soft:#172a4d;--ok:#4ade80;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1320;--surface:#171c2c;--surface-2:#1f2537;--text:#e7eaf3;--muted:#9aa3b8;--line:#2a3147;
+  --brand:#aab8f0;--brand-soft:#232b48;--accent:#6c9cff;
+  --mobile:#2dd4bf;--mobile-soft:#123332;--api:#fbbf24;--api-soft:#3a2c10;--web:#b28bff;--web-soft:#2a1f45;
+  --deploy:#5eead4;--deploy-soft:#113a36;--uat:#5eead4;--uat-soft:#113a36;--cf:#f0a05a;--cf-soft:#3d2a16;--line-2:#3a425a;--prod:#f87171;--prod-soft:#3d1a1a;--local:#93c5fd;--local-soft:#172a4d;--ok:#4ade80;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:8px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);margin-right:auto}
+.logo span{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;font-size:13px;letter-spacing:.5px}
+.nav a.link{color:var(--muted);font-weight:500;padding:6px 10px;border-radius:8px;font-size:.95rem;white-space:nowrap}
+.nav a.link:hover{background:var(--surface-2);color:var(--text)}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:16px;flex:none}
+
+/* hero */
+.hero{padding:64px 0 40px}
+.hero h1{font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{font-size:1.15rem;color:var(--muted);max-width:720px;margin:0 0 28px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:.92rem;color:var(--text);box-shadow:var(--shadow)}
+.pill i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pill.m i{background:var(--mobile)}.pill.d i{background:var(--deploy)}.pill.a i{background:var(--api)}.pill.w i{background:var(--web)}
+
+/* architecture */
+.arch{margin:8px 0 56px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.arch h2{margin:0 0 6px;font-size:1.25rem}
+.arch p{margin:0 0 18px;color:var(--muted)}
+.arch svg{width:100%;height:auto;display:block}
+.arch text{font-family:"Noto Sans Thai",system-ui,sans-serif}
+
+/* section */
+.section{padding:48px 0;border-top:1px solid var(--line)}
+.section-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;margin-bottom:28px}
+.section-head .tag{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:6px;margin-bottom:8px}
+.section-head h2{margin:0;font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.01em}
+.section-head p{margin:4px 0 0;color:var(--muted);max-width:760px}
+.mobile .tag{background:var(--mobile-soft);color:var(--mobile)}
+.api .tag{background:var(--api-soft);color:var(--api)}
+.web .tag{background:var(--web-soft);color:var(--web)}
+
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:36px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.card h3 .ic{width:28px;height:28px;border-radius:8px;display:inline-grid;place-items:center;font-size:14px;flex:none}
+.mobile .card h3 .ic{background:var(--mobile-soft);color:var(--mobile)}
+.api .card h3 .ic{background:var(--api-soft);color:var(--api)}
+.web .card h3 .ic{background:var(--web-soft);color:var(--web)}
+.tech{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tech li{background:var(--surface-2);border:1px solid var(--line);padding:5px 11px;border-radius:8px;font-size:.88rem;font-weight:500}
+.tech li b{font-weight:700}
+.svc{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.svc li{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.svc .sic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:17px}
+.svc b{display:block;font-size:.95rem}
+.svc span{color:var(--muted);font-size:.88rem;line-height:1.5}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.feat li{position:relative;padding-left:24px;font-size:.95rem}
+.feat li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px}
+.mobile .feat li::before{background:var(--mobile)}
+.api .feat li::before{background:var(--api)}
+.web .feat li::before{background:var(--web)}
+
+/* gallery */
+.gal-head{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+.gal-head h3{margin:0;font-size:1.2rem}
+.gal-head span{color:var(--muted);font-size:.9rem}
+.shots{display:grid;gap:16px}
+.shots.phones{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.shots.screens{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:zoom-in;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+.shot:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(20,25,45,.15)}
+.shot .img{background:var(--surface-2);position:relative;overflow:hidden}
+.phones .shot .img{aspect-ratio:1170/2532}
+.screens .shot .img{aspect-ratio:16/9}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot figcaption{padding:10px 12px;font-size:.85rem;line-height:1.4}
+.shot figcaption small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+.shot .n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:6px;font-size:.72rem;font-weight:700;margin-right:6px;vertical-align:middle}
+.mobile .shot .n{background:var(--mobile-soft);color:var(--mobile)}
+.api .shot .n{background:var(--api-soft);color:var(--api)}
+.web .shot .n{background:var(--web-soft);color:var(--web)}
+.shot.tall .img{aspect-ratio:auto;max-height:720px;overflow:auto}
+.shot.tall img{height:auto;object-fit:contain}
+.shot.tall{cursor:default}
+.shot.tall:hover{transform:none}
+.api .shots{grid-template-columns:1fr}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(6,8,16,.92);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
+.lb.open{display:flex}
+.lb img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lb .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;color:#e7eaf3;font-size:.95rem;padding:0 60px}
+.lb button{position:absolute;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:20px;display:grid;place-items:center}
+.lb button:hover{background:rgba(255,255,255,.22)}
+.lb .x{top:18px;right:18px}.lb .p{left:18px;top:50%;transform:translateY(-50%)}.lb .nx{right:18px;top:50%;transform:translateY(-50%)}
+
+
+/* deploy */
+.deploy .section-head .tag{background:var(--brand-soft);color:var(--brand)}
+.uat .section-head .tag{background:var(--uat-soft);color:var(--uat)}
+.prod .section-head .tag{background:var(--prod-soft);color:var(--prod)}
+.cicd .section-head .tag{background:var(--local-soft);color:var(--local)}
+.deploy .card h3 .ic,.cicd .card h3 .ic{background:var(--brand-soft);color:var(--brand)}
+.uat .card h3 .ic{background:var(--uat-soft);color:var(--uat)}
+.prod .card h3 .ic{background:var(--prod-soft);color:var(--prod)}
+.deploy .feat li::before,.cicd .feat li::before{background:var(--brand)}
+.uat .feat li::before{background:var(--uat)}
+.prod .feat li::before{background:var(--prod)}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 24px}
+.subnav a{font-size:.85rem;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.subnav a:hover{color:var(--text);border-color:var(--line-2)}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin:0 0 8px}
+.env{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);border-top:5px solid var(--uat)}
+.env.prod{border-top-color:var(--prod)}
+.env .tag{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:6px;background:var(--uat-soft);color:var(--uat)}
+.env.prod .tag{background:var(--prod-soft);color:var(--prod)}
+.env h2{margin:10px 0 10px;font-size:1.35rem}
+.env p{margin:0 0 12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.kpi{border-top:1px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-size:1.25rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi span{font-size:.78rem;color:var(--muted)}
+.grid3.two{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.steps li{font-size:.95rem}
+.steps li small{color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:8px 0 0;max-width:900px}
+p code,li code,td code{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.darch{margin:0 0 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);overflow-x:auto}
+.uat .darch{border-color:var(--uat)} .prod .darch{border-color:var(--prod)} .cicd .darch{border-color:var(--local)}
+.darch h3{margin:0 0 4px;font-size:1.15rem}
+.uat .darch h3{color:var(--uat)} .prod .darch h3{color:var(--prod)} .cicd .darch h3{color:var(--local)}
+.darch p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
+.darch svg{width:100%;min-width:820px;height:auto;display:block;font-family:"Noto Sans Thai",system-ui,sans-serif}
+.darch .box{fill:var(--surface);stroke:var(--line-2);stroke-width:1.5}
+.darch .box.cf{fill:var(--cf-soft);stroke:var(--cf)}
+.darch .box.pod{fill:var(--surface-2);stroke:var(--line-2);stroke-dasharray:4 3}
+.darch .box.bo{fill:var(--web-soft);stroke:var(--web)}
+.darch .box.api{fill:var(--api-soft);stroke:var(--api)}
+.darch .box.mob{fill:var(--mobile-soft);stroke:var(--mobile)}
+.darch .box.gh{fill:var(--local-soft);stroke:var(--local)}
+.darch .box.u{stroke:var(--uat)} .darch .box.p{stroke:var(--prod)}
+.darch .lbl{fill:var(--text);font-size:13px;font-weight:700}
+.darch .sub{fill:var(--muted);font-size:10.5px}
+.darch .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+.darch .edge.in{stroke:var(--cf)}
+.darch .edge.out{stroke:var(--ok);stroke-dasharray:5 3}
+.darch .edge.adm{stroke:var(--local);stroke-dasharray:2 3}
+.darch .edge.ext{stroke:var(--muted);stroke-dasharray:5 4}
+.darch .edge.ci{stroke:var(--local)}
+.darch .zone{fill:none;stroke:var(--line-2);stroke-width:1.2;stroke-dasharray:6 4}
+.darch .zone.u{stroke:var(--uat)} .darch .zone.p{stroke:var(--prod)}
+.darch .zlbl{fill:var(--muted);font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.03em}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:.85rem;color:var(--muted)}
+.legend-row span::before{content:"";display:inline-block;width:22px;height:0;border-top:2px solid var(--muted);margin-right:6px;vertical-align:middle}
+.legend-row .in::before{border-color:var(--cf)}
+.legend-row .out::before{border-color:var(--ok);border-top-style:dashed}
+.legend-row .adm::before{border-color:var(--local);border-top-style:dotted}
+.legend-row .ext::before{border-top-style:dashed}
+.legend-row .ci::before{border-color:var(--local)}
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);margin-bottom:24px}
+.cmp{width:100%;border-collapse:collapse;font-size:.9rem}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{color:var(--muted);font-weight:600;font-size:.8rem;background:var(--surface-2);white-space:nowrap}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.cmp .cu{border-left:3px solid var(--uat)} .cmp .cp{border-left:3px solid var(--prod)} .cmp .cl{border-left:3px solid var(--local)}
+.cmp td.num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.cmp th.num{text-align:right}
+.cmp tr.total td{font-weight:700;background:var(--surface-2)}
+.cmp .muted{color:var(--muted);font-weight:400;font-size:.85rem}
+.note{background:var(--brand-soft);border:1px solid var(--brand);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px}
+.note b{display:block;margin-bottom:8px;color:var(--brand)}
+.note ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.95rem}
+.uat .note{background:var(--uat-soft);border-color:var(--uat)} .uat .note b{color:var(--uat)}
+.prod .note{background:var(--prod-soft);border-color:var(--prod)} .prod .note b{color:var(--prod)}
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.85rem;line-height:1.55;margin:0}
+pre code{font-size:1em}
+.pre-cap{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 36px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:1.5rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.85rem}
+@media (max-width:640px){.hero{padding:40px 0 28px}.section{padding:36px 0}.shots.phones{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.shots.screens{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top"><span>NH</span>NorthHR</a>
+    <div class="nav-links">
+      <a class="link" href="#architecture">สถาปัตยกรรม</a>
+      <a class="link" href="#mobile">hr_mobile</a>
+      <a class="link" href="#api">hr-api</a>
+      <a class="link" href="#web">hr-bo</a>
+      <a class="link" href="#deploy">Deploy (UAT / PROD / CI/CD)</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="สลับธีม" aria-label="สลับธีม">◐</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1>NorthHR <em>HR Management System</em></h1>
+    <p class="lead">ระบบบริหารงานบุคคลสำหรับองค์กร ประกอบด้วย 3 โปรเจกต์ที่ทำงานร่วมกัน: แอปมือถือสำหรับพนักงาน, API server กลาง และเว็บ back‑office สำหรับ HR/Admin ครอบคลุมการลงเวลาด้วย GPS, การลา, การรายงานมาสาย และการจัดการพนักงาน</p>
+    <div class="pills">
+      <span class="pill m"><i></i>hr_mobile · Flutter (พนักงาน)</span>
+      <span class="pill a"><i></i>hr-api · NestJS + PostgreSQL</span>
+      <span class="pill w"><i></i>hr-bo · Next.js (HR / Admin)</span>
+      <a class="pill d" href="#deploy"><i></i>Deploy · UAT (compose) · PROD (k3s + RDS) · CI/CD</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>3</b><span>โปรเจกต์ (Mobile · API · Web)</span></div>
+    <div class="stat"><b>11</b><span>โมดูล API (/api/v1)</span></div>
+    <div class="stat"><b>7</b><span>โมเดลข้อมูลหลัก (Prisma)</span></div>
+    <div class="stat"><b>3</b><span>บทบาทผู้ใช้: EMPLOYEE · HR · ADMIN</span></div>
+  </div>
+
+  <section class="arch" id="architecture">
+    <h2>สถาปัตยกรรมระบบ</h2>
+    <p>Client ทั้งสองฝั่งเรียก hr-api ผ่าน HTTPS ด้วย JWT Bearer token · hr-api เชื่อมต่อ PostgreSQL ผ่าน Prisma และใช้บริการภายนอกสำหรับไฟล์ อีเมล และ push notification</p>
+    <svg viewBox="0 0 1100 420" role="img" aria-label="แผนภาพสถาปัตยกรรม NorthHR">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+      </defs>
+      <!-- clients -->
+      <g>
+        <rect x="60" y="30" width="300" height="96" rx="14" fill="var(--mobile-soft)" stroke="var(--mobile)" stroke-width="2"/>
+        <text x="210" y="68" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)">hr_mobile</text>
+        <text x="210" y="96" text-anchor="middle" font-size="14" fill="var(--muted)">Flutter · BLoC · Retrofit/Dio · พนักงาน (EMPLOYEE)</text>
+      </g>
+      <g>
+        <rect x="740" y="30" width="300" height="96" rx="14" fill="var(--web-soft)" stroke="var(--web)" stroke-width="2"/>
+        <text x="890" y="68" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)">hr-bo</text>
+        <text x="890" y="96" text-anchor="middle" font-size="14" fill="var(--muted)">Next.js 14 · Tailwind · Flowbite · HR / ADMIN</text>
+      </g>
+      <!-- api -->
+      <g>
+        <rect x="380" y="190" width="340" height="100" rx="14" fill="var(--api-soft)" stroke="var(--api)" stroke-width="2"/>
+        <text x="550" y="230" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)">hr-api</text>
+        <text x="550" y="258" text-anchor="middle" font-size="14" fill="var(--muted)">NestJS 10 · Prisma 6 · JWT · Swagger · /api/v1/*</text>
+      </g>
+      <!-- arrows clients -> api -->
+      <path d="M210 126 C210 180 400 150 440 190" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <path d="M890 126 C890 180 700 150 660 190" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <text x="300" y="150" font-size="13" fill="var(--muted)">HTTPS · JWT Bearer</text>
+      <text x="700" y="150" font-size="13" fill="var(--muted)">HTTPS · JWT (HTTP-only cookie)</text>
+      <!-- services -->
+      <g>
+        <rect x="60" y="340" width="200" height="60" rx="12" fill="var(--surface-2)" stroke="var(--line)" stroke-width="2"/>
+        <text x="160" y="366" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)">PostgreSQL</text>
+        <text x="160" y="388" text-anchor="middle" font-size="12" fill="var(--muted)">Prisma ORM · Docker</text>
+      </g>
+      <g>
+        <rect x="320" y="340" width="200" height="60" rx="12" fill="var(--surface-2)" stroke="var(--line)" stroke-width="2"/>
+        <text x="420" y="366" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)">AWS S3</text>
+        <text x="420" y="388" text-anchor="middle" font-size="12" fill="var(--muted)">ไฟล์ · Presigned URL</text>
+      </g>
+      <g>
+        <rect x="580" y="340" width="200" height="60" rx="12" fill="var(--surface-2)" stroke="var(--line)" stroke-width="2"/>
+        <text x="680" y="366" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)">SMTP Email</text>
+        <text x="680" y="388" text-anchor="middle" font-size="12" fill="var(--muted)">Nodemailer · OTP / reset</text>
+      </g>
+      <g>
+        <rect x="840" y="340" width="200" height="60" rx="12" fill="var(--surface-2)" stroke="var(--line)" stroke-width="2"/>
+        <text x="940" y="366" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)">Google Maps</text>
+        <text x="940" y="388" text-anchor="middle" font-size="12" fill="var(--muted)">แผนที่ · Geofence (mobile + web)</text>
+      </g>
+      <path d="M470 290 L200 340" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+      <path d="M520 290 L440 340" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+      <path d="M600 290 L660 340" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+      <path d="M890 126 L935 340" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+      <path d="M210 126 C150 260 400 300 880 350" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+    </svg>
+  </section>
+</div>
+
+<!-- ===================== MOBILE ===================== -->
+<section class="section mobile" id="mobile">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Mobile App · Employee</span>
+        <h2>hr_mobile — แอปพนักงาน (Flutter)</h2>
+        <p>แอปมือถือสำหรับพนักงานทั่วไป (role <code>EMPLOYEE</code>) ใช้ลงเวลาเข้า‑ออกด้วยตำแหน่ง GPS ยื่นใบลา รายงานการมาสาย และดูข้อมูลส่วนตัว รองรับ iOS และ Android จาก codebase เดียว</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Flutter</b> 3.47 (FVM)</li><li><b>Dart</b> 3.13</li>
+          <li>flutter_bloc 9 (State)</li><li>flutter_modular 7 (Routing)</li>
+          <li>Dio 5 + Retrofit 4 (REST)</li><li>get_it (DI)</li>
+          <li>json_serializable + build_runner</li><li>shared_preferences</li>
+          <li>dart_jsonwebtoken</li><li>image_picker / file_picker</li>
+          <li>syncfusion_datepicker</li><li>flutter_local_notifications</li>
+          <li>Alice (HTTP inspector)</li><li>url_launcher</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🔥</span><div><b>Firebase</b><span>Core · Cloud Messaging (FCM push notification) · Analytics · App Distribution สำหรับแจกจ่าย build ทดสอบ</span></div></li>
+          <li><span class="sic">🗺</span><div><b>Google Maps</b><span>google_maps_flutter แสดงแผนที่ตำแหน่งปัจจุบันและสถานที่ทำงาน พร้อมคำนวณระยะห่างสำหรับ geofence</span></div></li>
+          <li><span class="sic">📍</span><div><b>Location / Permission</b><span>ดึงพิกัด GPS แบบเรียลไทม์ผ่าน location + permission_handler</span></div></li>
+          <li><span class="sic">🔗</span><div><b>hr-api</b><span>REST <code>/api/v1/*</code> ผ่าน Retrofit client · JWT Bearer จาก SharedPreferences · redirect login เมื่อ 401</span></div></li>
+          <li><span class="sic">📞</span><div><b>โทร · อีเมล · LINE</b><span>เปิดแอปภายนอกเพื่อติดต่อเพื่อนร่วมงานที่ยังไม่เช็คอิน</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>ฟีเจอร์โดยสรุป</h3>
+        <ul class="feat">
+          <li><b>เข้าสู่ระบบ / ลืมรหัสผ่าน</b> ด้วยอีเมล + OTP ทางอีเมล</li>
+          <li><b>ลงเวลาเข้า‑ออกงาน</b> เลือกสถานที่ทำงาน ตรวจระยะห่างจากพิกัดจริงบนแผนที่ก่อนยืนยัน</li>
+          <li><b>การจัดการเวลา</b> ดูประวัติเช็คอิน/เช็คเอาท์ของวันนี้ พร้อมคำแนะนำเวลาเข้างาน</li>
+          <li><b>รายงานการมาสาย</b> ส่งเหตุผลการมาสายของตนเอง</li>
+          <li><b>ขอลางาน</b> เลือกประเภท/ช่วงวัน แนบเอกสาร (PDF, DOC) อัปโหลดขึ้น S3 ระบุผู้ปฏิบัติงานแทน</li>
+          <li><b>สิทธิการลา &amp; ประวัติการลา</b> ลาป่วย · ลากิจ · ลาพักร้อน · ลาคลอด พร้อมสถานะอนุมัติ</li>
+          <li><b>เช็คอินแบบเรียลไทม์</b> รายชื่อพนักงานที่ยังไม่เช็คอินวันนี้ ค้นหาและติดต่อได้ทันที</li>
+          <li><b>โปรไฟล์</b> แก้ไขข้อมูล เปลี่ยนรหัสผ่าน ดูตำแหน่งที่ทำงานบนแผนที่ ตั้งค่า</li>
+          <li><b>Push Notification</b> ผ่าน FCM + local notification</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอแอปมือถือ</h3><span>19 หน้าจอ · คลิกเพื่อขยาย</span></div>
+    <div class="shots phones" data-group="mobile">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5971.PNG" alt=""></div><figcaption><span class="n">1</span>เข้าสู่ระบบ<small>Login ด้วยอีเมล/รหัสผ่าน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5972.PNG" alt=""></div><figcaption><span class="n">2</span>ลืมรหัสผ่าน<small>ส่งรหัสยืนยันไปยังอีเมล</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5973.PNG" alt=""></div><figcaption><span class="n">3</span>แดชบอร์ด<small>เมนูหลัก 4 ฟีเจอร์</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5974.PNG" alt=""></div><figcaption><span class="n">4</span>เมนูโปรไฟล์<small>ข้อมูล · สิทธิลา · สถานที่ · ตั้งค่า</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5975.PNG" alt=""></div><figcaption><span class="n">5</span>ข้อมูลส่วนตัว<small>รหัสพนักงาน ตำแหน่ง จังหวัด</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5976.PNG" alt=""></div><figcaption><span class="n">6</span>สถานที่ทำงานของฉัน<small>Google Maps</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5977.PNG" alt=""></div><figcaption><span class="n">7</span>เปลี่ยนรหัสผ่าน<small>ยืนยันรหัสเดิมก่อนตั้งใหม่</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5978.PNG" alt=""></div><figcaption><span class="n">8</span>การจัดการเวลา<small>ก่อนเช็คอินของวัน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5979.PNG" alt=""></div><figcaption><span class="n">9</span>ลงเวลาเข้างาน<small>แผนที่ตำแหน่งปัจจุบัน + สถานที่</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5980.PNG" alt=""></div><figcaption><span class="n">10</span>ยืนยันการลงเวลา<small>แสดงพิกัด ระยะห่าง เวลา</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5981.PNG" alt=""></div><figcaption><span class="n">11</span>ลงเวลาสำเร็จ<small>บันทึกลง Attendance</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5982.PNG" alt=""></div><figcaption><span class="n">12</span>ประวัติเช็คอินวันนี้<small>เข้า/ออก พร้อมระยะห่าง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5983.PNG" alt=""></div><figcaption><span class="n">13</span>รายงานการมาสาย<small>ส่งเหตุผลมาสาย</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5984.PNG" alt=""></div><figcaption><span class="n">14</span>แบบฟอร์มขอลา<small>เลือกช่วงวันจากปฏิทิน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5985.PNG" alt=""></div><figcaption><span class="n">15</span>แบบฟอร์มขอลา<small>ประเภท เหตุผล แนบเอกสาร (S3)</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5986.PNG" alt=""></div><figcaption><span class="n">16</span>เช็คอินแบบเรียลไทม์<small>ผู้ยังไม่เช็คอิน · โทร/อีเมล/LINE</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5987.PNG" alt=""></div><figcaption><span class="n">17</span>เช็คอินแบบเรียลไทม์<small>ค้นหาพนักงาน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5988.PNG" alt=""></div><figcaption><span class="n">18</span>ประวัติการลางาน<small>รอดำเนินการ · อนุมัติ · ปฏิเสธ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-mobile/IMG_5989.PNG" alt=""></div><figcaption><span class="n">19</span>สิทธิการลา<small>ยอดคงเหลือแต่ละประเภท</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== API ===================== -->
+<section class="section api" id="api">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Backend · REST API</span>
+        <h2>hr-api — API Server (NestJS)</h2>
+        <p>แกนกลางของระบบ ให้บริการ REST API เดียวกันแก่ทั้งแอปมือถือและเว็บ back‑office ด้วย URI versioning <code>/api/v1/*</code> ป้องกันด้วย JWT และมีเอกสาร Swagger/OpenAPI สร้างอัตโนมัติ</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>NestJS</b> 10 (Express)</li><li><b>Node.js</b> 20</li><li><b>TypeScript</b></li>
+          <li><b>Prisma</b> 6.16 ORM</li><li>@nestjs/jwt + passport-jwt</li><li>bcrypt</li>
+          <li>class-validator / class-transformer</li><li>Joi (env validation)</li>
+          <li>Swagger / OpenAPI 3</li><li>date-fns + date-fns-tz</li>
+          <li>Docker + docker-compose</li><li>ESLint + Prettier</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL</b><span>ฐานข้อมูลหลัก เชื่อมผ่าน Prisma (connection pooled) · migrations · seed · รัน local ด้วย Docker</span></div></li>
+          <li><span class="sic">🪣</span><div><b>AWS S3</b><span>เก็บไฟล์แนบใบลาและรูปโปรไฟล์ ออก presigned URL ให้ client อัปโหลด/อ่านไฟล์ private โดยตรง (@aws-sdk/client-s3)</span></div></li>
+          <li><span class="sic">✉️</span><div><b>Email (SMTP)</b><span>Nodemailer ส่งอีเมลยืนยันตัวตน, รหัส OTP และลิงก์รีเซ็ตรหัสผ่าน</span></div></li>
+          <li><span class="sic">🔐</span><div><b>JWT Auth</b><span>ออก token แยก endpoint สำหรับ mobile และ back‑office (<code>/auth/login</code>, <code>/auth/bo/login</code>) · CORS whitelist</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>โมดูล / ฟีเจอร์</h3>
+        <ul class="feat">
+          <li><b>Auth</b> login, register, profile, forgot/reset password, mock login (non‑prod)</li>
+          <li><b>Verification</b> ส่ง/ตรวจ OTP ทางอีเมล · ยืนยันอีเมล</li>
+          <li><b>Employee</b> CRUD พนักงาน, role, รูปโปรไฟล์, รายชื่อที่ยังไม่เช็คอินวันนี้</li>
+          <li><b>WorkPlace</b> สถานที่ทำงาน พิกัด lat/lng + รัศมี geofence</li>
+          <li><b>Attendance</b> เช็คอิน/เช็คเอาท์ · grouped attendances · real‑time check‑in today</li>
+          <li><b>LeaveEntitlement</b> สิทธิลา 4 ประเภทต่อพนักงาน + reset รายปี</li>
+          <li><b>LeaveRequestReport</b> ยื่นใบลา · อนุมัติ/ปฏิเสธ · เอกสารแนบ</li>
+          <li><b>LateReasonReport</b> รายงานมาสาย (พนักงานส่งเอง / Admin บันทึก)</li>
+          <li><b>Dashboard</b> รายงานสถิติสำหรับ back‑office</li>
+          <li><b>File</b> upload + private signed URL (S3)</li>
+          <li><b>Email · Healthcheck</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอ API</h3><span>Swagger UI (เลื่อนดูภายในกรอบได้)</span></div>
+    <div class="shots" data-group="api">
+      <figure class="shot tall"><div class="img"><img loading="lazy" src="capture-api/1.png" alt=""></div><figcaption><span class="n">1</span>Swagger UI — North HR API v1.0<small>เอกสาร endpoint ทั้งหมดของ <code>/api/v1</code> พร้อม schema DTO และ Authorize ด้วย Bearer token</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WEB ===================== -->
+<section class="section web" id="web">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Web · Back‑office</span>
+        <h2>hr-bo — เว็บ Back‑office (Next.js)</h2>
+        <p>เว็บสำหรับ HR และ Admin ใช้ดูภาพรวม อนุมัติใบลา ตรวจสอบการลงเวลา จัดการพนักงาน สิทธิลา และสถานที่ทำงาน รองรับธีมสว่าง/มืด และส่งออกข้อมูลเป็น Excel</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Next.js</b> 14.2 (App Router)</li><li><b>React</b> 18</li><li><b>Node.js</b> 20</li>
+          <li><b>Tailwind CSS</b> 3.4</li><li>Flowbite React</li><li>Axios</li>
+          <li>Zod (validation)</li><li>@t3-oss/env-nextjs</li>
+          <li>react-apexcharts (กราฟ)</li><li>xlsx (Excel export)</li>
+          <li>react-toastify</li><li>date-fns-tz</li><li>Docker</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🗺</span><div><b>Google Maps JS API</b><span>@vis.gl/react-google-maps สำหรับเลือกและแสดงตำแหน่งสถานที่ทำงาน (ปักหมุด + รัศมี geofence)</span></div></li>
+          <li><span class="sic">🔗</span><div><b>hr-api</b><span>Service layer แบบ class (extend BaseService) เรียก REST ผ่าน Axios · แนบ JWT จาก session cookie อัตโนมัติ</span></div></li>
+          <li><span class="sic">🍪</span><div><b>Session (JWT cookie)</b><span>เก็บ token ใน HTTP‑only cookie (secure, SameSite=lax) · ตรวจ session ทุกหน้าใต้ <code>/dashboard</code></span></div></li>
+          <li><span class="sic">🪣</span><div><b>AWS S3 (ผ่าน API)</b><span>เปิดดูเอกสารแนบใบลาผ่าน presigned URL · อัปโหลดรูปพนักงาน</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>ฟีเจอร์โดยสรุป</h3>
+        <ul class="feat">
+          <li><b>Landing page</b> แนะนำระบบ + ลิงก์ดาวน์โหลดแอป · ธีมสว่าง/มืด</li>
+          <li><b>เข้าสู่ระบบ / ลืมรหัสผ่าน / รีเซ็ตรหัสผ่าน / ยืนยันอีเมล</b></li>
+          <li><b>ภาพรวม (Dashboard)</b> กราฟสถิติรายงานมาสายและคำขอลารายเดือน</li>
+          <li><b>การลงเวลา</b> ตารางเช็คอิน/เช็คเอาท์ สถานที่ ระยะห่าง พิกัด · ค้นหา · ส่งออก Excel</li>
+          <li><b>การมาสาย</b> รายงานจากพนักงานหรือ Admin บันทึกเอง · ลบ · ส่งออก</li>
+          <li><b>สิทธิการลา</b> กำหนดโควตาลาป่วย/ลากิจ/พักร้อน/ลาคลอด ต่อพนักงาน</li>
+          <li><b>คำขอลา</b> พิจารณาอนุมัติ/ปฏิเสธ ดูเอกสารแนบ และยอดสิทธิคงเหลือ</li>
+          <li><b>สถานที่ทำงาน</b> เพิ่ม/แก้ไข เลือกพิกัดบน Google Map + รัศมี</li>
+          <li><b>พนักงาน</b> CRUD ข้อมูล รูปโปรไฟล์ บทบาท สถานที่ทำงาน สถานะ</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอเว็บ Back‑office</h3><span>15 หน้าจอ · คลิกเพื่อขยาย</span></div>
+    <div class="shots screens" data-group="web">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/1-white.png" alt=""></div><figcaption><span class="n">1</span>Landing page (ธีมสว่าง)<small>แนะนำระบบ ฟีเจอร์ และลิงก์ดาวน์โหลดแอป</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/1.png" alt=""></div><figcaption><span class="n">2</span>Landing page (ธีมมืด)<small>รองรับ dark mode ทั้งเว็บ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/2.png" alt=""></div><figcaption><span class="n">3</span>เข้าสู่ระบบ<small>สำหรับ HR / Admin</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/3.png" alt=""></div><figcaption><span class="n">4</span>ลืมรหัสผ่าน<small>ส่งลิงก์รีเซ็ตทางอีเมล</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/4-white.png" alt=""></div><figcaption><span class="n">5</span>ภาพรวม / Dashboard (สว่าง)<small>กราฟ ApexCharts รายงานมาสายและคำขอลา</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/4.png" alt=""></div><figcaption><span class="n">6</span>ภาพรวม / Dashboard (มืด)<small>เปรียบเทียบเดือนปัจจุบันกับเดือนก่อน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/5.png" alt=""></div><figcaption><span class="n">7</span>บันทึกการลงเวลา<small>เวลาเข้า/ออก สถานที่ ระยะห่าง พิกัด · ส่งออก Excel</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/6.png" alt=""></div><figcaption><span class="n">8</span>รายงานการมาสาย<small>ประเภทรายงาน เหตุผล ผู้รายงาน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/7.png" alt=""></div><figcaption><span class="n">9</span>สิทธิการลาทั้งหมด<small>โควตา/ใช้แล้ว แยก 4 ประเภทต่อพนักงาน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/8.png" alt=""></div><figcaption><span class="n">10</span>คำขอลาทั้งหมด<small>สถานะ รออนุมัติ / อนุมัติ / ปฏิเสธ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/9.png" alt=""></div><figcaption><span class="n">11</span>เปิดเอกสารแนบใบลา<small>ไฟล์ private บน S3 ผ่าน presigned URL</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/10.png" alt=""></div><figcaption><span class="n">12</span>พิจารณาคำขอลา<small>อนุมัติ/ปฏิเสธ พร้อมสิทธิคงเหลือ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/11.png" alt=""></div><figcaption><span class="n">13</span>แก้ไขสถานที่ทำงาน<small>เลือกพิกัดบน Google Map + รัศมี (เมตร)</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/12.png" alt=""></div><figcaption><span class="n">14</span>พนักงานทั้งหมด<small>รหัส ชื่อ อีเมล เบอร์ LINE บทบาท สถานที่ สถานะ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/13.png" alt=""></div><figcaption><span class="n">15</span>แก้ไขข้อมูลพนักงาน<small>รูปโปรไฟล์ + ข้อมูลส่วนตัว</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DEPLOY ===================== -->
+<section class="section deploy" id="deploy">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Deployment · UAT · Production · CI/CD</span>
+        <h2>โครงสร้างการ Deploy — UAT และ PROD</h2>
+        <p>ทั้งสอง environment ใช้หลักการเดียวกันคือ <b>Cloudflare → Tunnel → container → database</b> ไม่มี load balancer, ไม่มี certificate ให้ต่ออายุ และไม่มี inbound rule เข้าเครื่อง ต่างกันที่ runtime และฐานข้อมูลตามขนาดผู้ใช้: UAT มีผู้ทดสอบคนเดียวจึงใช้ docker compose บนเครื่องเดียว ส่วน PROD มีผู้ใช้ 3,000–4,000 คนจึงใช้ k3s หลาย node + RDS</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#deploy-uat">UAT</a><a href="#deploy-prod">PROD</a><a href="#deploy-cicd">CI/CD</a><a href="#deploy-config">การตั้งค่า</a><a href="#deploy-mobile">hr_mobile</a><a href="#deploy-ops">Ops</a><a href="#deploy-cost">ค่าใช้จ่าย</a><a href="#deploy-compare">เทียบ</a>
+    </div>
+
+    <div class="decide">
+      <div class="env">
+        <span class="tag">UAT · ใช้งานอยู่</span>
+        <h2>EC2 เครื่องเดียว + docker compose + Cloudflare Tunnel</h2>
+        <p><b>ผู้ใช้:</b> ผู้ทดสอบคนเดียว ทดสอบระบบก่อนปล่อย ไม่ต้องการ HA ต้องการ deploy เร็ว reset ข้อมูลได้ทุกรอบ และปิดเครื่องนอกเวลางานได้</p>
+        <p><b>เหตุผล:</b> สร้างครบใน ~6 นาที ขึ้นเวอร์ชันใหม่ &lt; 1 นาที ไม่มี Kubernetes ไม่มี RDS ค่าใช้จ่ายราว $0.7/วัน และ stop แล้วเหลือ ~$0.1/วัน</p>
+        <div class="kpis">
+          <div class="kpi"><b>~$0.7</b><span>ต่อวัน (≈ $22/เดือน)</span></div>
+          <div class="kpi"><b>5</b><span>AWS service</span></div>
+          <div class="kpi"><b>3 ขั้น</b><span>สร้าง ~6 นาที</span></div>
+        </div>
+      </div>
+      <div class="env prod">
+        <span class="tag">PROD · แผน</span>
+        <h2>EC2 หลาย node + k3s + Cloudflare Tunnel + RDS</h2>
+        <p><b>ผู้ใช้:</b> พนักงาน 3,000–4,000 คน โหลดเป็นช่วง (check-in เช้า / check-out เย็น) ต้องการ pod หลายตัว ขยายอัตโนมัติ ฐานข้อมูลที่ AWS ดูแล backup ให้ และ rollback ได้</p>
+        <p><b>เหตุผล:</b> ได้ HPA, หลาย node คนละ AZ, RDS Multi-AZ และ manifest เดียวกับ EKS ในราคาราว 1/3 ของ EKS ถ้าวันหน้าต้องการ SLA ของ control plane ค่อยยก manifest ไป Amazon EKS</p>
+        <div class="kpis">
+          <div class="kpi"><b>~$5</b><span>ต่อวัน (≈ $140/เดือน)</span></div>
+          <div class="kpi"><b>7</b><span>AWS service</span></div>
+          <div class="kpi"><b>5 ขั้น</b><span>สร้าง ~20 นาที</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="fine">ตัวเลขค่าใช้จ่ายเป็นประมาณการ on-demand ใน ap-southeast-1 (รายละเอียดในหัวข้อค่าใช้จ่าย)</p>
+  </div>
+</section>
+
+<!-- ---------- UAT ---------- -->
+<section class="section uat" id="deploy-uat">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Deploy · UAT</span>
+        <h2>hr_mobile / browser → Cloudflare edge → Tunnel → cloudflared → hr-bo / hr-api → postgres</h2>
+        <p>ทุกอย่างอยู่ใน <code>docker compose</code> ชุดเดียวบน EC2 t4g.small: cloudflared, hr-bo, hr-api และ postgres ไม่มี container ไหน publish port ออก host ยกเว้น postgres ที่ผูก loopback ไว้ให้ SSM port-forward · hr_mobile build UAT ชี้ <code>BASE_URL</code> มาที่โดเมน API ของ UAT</p>
+      </div>
+    </div>
+
+    <div class="darch">
+      <h3>สถาปัตยกรรม UAT</h3>
+      <p>ลูกศรสีส้ม = request ของผู้ใช้ · เส้นประเขียว = connection ที่ cloudflared เปิด "ออก" ไป Cloudflare เอง · เส้นประน้ำเงิน = ทางของผู้ดูแลผ่าน SSM · เส้นประเทา = เรียกบริการภายนอก</p>
+      <svg viewBox="0 0 1100 620" role="img" aria-label="แผนภาพการ deploy NorthHR UAT บน EC2 + docker compose + Cloudflare Tunnel">
+        <defs>
+          <marker id="au1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--cf)"/></marker>
+          <marker id="au2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+          <marker id="au3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ok)"/></marker>
+          <marker id="au4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--local)"/></marker>
+        </defs>
+
+        <!-- VPC zone -->
+        <rect class="zone u" x="430" y="30" width="650" height="440" rx="12"/>
+        <text class="zlbl" x="446" y="50">VPC 10.30.0.0/16 · public subnet เดียว · ไม่มี NAT · SG ไม่มี inbound rule เลย</text>
+        <!-- EC2 zone -->
+        <rect class="zone" x="450" y="70" width="610" height="310" rx="10"/>
+        <text class="zlbl" x="466" y="90">EC2 t4g.small (arm64) · AL2023 · docker compose ใน /opt/northhr · EBS 30 GB เข้ารหัส</text>
+
+        <!-- clients -->
+        <rect class="box bo" x="30" y="100" width="170" height="64" rx="10"/>
+        <text class="lbl" x="115" y="126" text-anchor="middle">HR / Admin · browser</text>
+        <text class="sub" x="115" y="144" text-anchor="middle">https://uat.nthw.dev → hr-bo</text>
+
+        <rect class="box mob" x="30" y="190" width="170" height="78" rx="10"/>
+        <text class="lbl" x="115" y="216" text-anchor="middle">hr_mobile (พนักงาน)</text>
+        <text class="sub" x="115" y="234" text-anchor="middle">build UAT · BASE_URL=</text>
+        <text class="sub" x="115" y="250" text-anchor="middle">https://api.uat.nthw.dev</text>
+
+        <!-- Cloudflare -->
+        <rect class="box cf" x="240" y="150" width="160" height="64" rx="10"/>
+        <text class="lbl" x="320" y="176" text-anchor="middle">Cloudflare edge</text>
+        <text class="sub" x="320" y="194" text-anchor="middle">DNS · TLS จบที่นี่ · Tunnel</text>
+
+        <!-- cloudflared -->
+        <rect class="box pod" x="480" y="150" width="150" height="64" rx="10"/>
+        <text class="lbl" x="555" y="176" text-anchor="middle">cloudflared</text>
+        <text class="sub" x="555" y="194" text-anchor="middle">container · TUNNEL_TOKEN</text>
+
+        <!-- hr-bo -->
+        <rect class="box bo" x="670" y="110" width="170" height="64" rx="10"/>
+        <text class="lbl" x="755" y="136" text-anchor="middle">hr-bo :3000</text>
+        <text class="sub" x="755" y="154" text-anchor="middle">uat.nthw.dev</text>
+
+        <!-- hr-api -->
+        <rect class="box api" x="670" y="200" width="170" height="64" rx="10"/>
+        <text class="lbl" x="755" y="226" text-anchor="middle">hr-api :3000</text>
+        <text class="sub" x="755" y="244" text-anchor="middle">api.uat.nthw.dev · /api/v1</text>
+
+        <!-- postgres -->
+        <rect class="box" x="880" y="200" width="160" height="64" rx="10"/>
+        <text class="lbl" x="960" y="226" text-anchor="middle">postgres:16</text>
+        <text class="sub" x="960" y="244" text-anchor="middle">volume pgdata บน EBS</text>
+
+        <!-- migrate -->
+        <rect class="box pod" x="880" y="110" width="160" height="64" rx="10"/>
+        <text class="lbl" x="960" y="136" text-anchor="middle">prisma migrate deploy</text>
+        <text class="sub" x="960" y="154" text-anchor="middle">one-shot ก่อน compose up</text>
+
+        <!-- loopback -->
+        <rect class="box pod" x="480" y="305" width="270" height="52" rx="10"/>
+        <text class="lbl" x="615" y="327" text-anchor="middle">127.0.0.1:5432 (loopback)</text>
+        <text class="sub" x="615" y="345" text-anchor="middle">connect_db.sh → DBeaver · pg_dump</text>
+
+        <!-- SSM agent -->
+        <rect class="box u" x="780" y="305" width="260" height="52" rx="10"/>
+        <text class="lbl" x="910" y="327" text-anchor="middle">SSM agent</text>
+        <text class="sub" x="910" y="345" text-anchor="middle">deploy.sh · logs.sh · shell.sh · reset_db.sh</text>
+
+        <!-- IAM / IGW -->
+        <rect class="box u" x="880" y="405" width="160" height="44" rx="10"/>
+        <text class="lbl" x="960" y="424" text-anchor="middle">IAM role (SSM) · IGW</text>
+        <text class="sub" x="960" y="440" text-anchor="middle">ขาออกด้วย public IP</text>
+
+        <!-- macOS admin -->
+        <rect class="box" x="240" y="305" width="160" height="52" rx="10"/>
+        <text class="lbl" x="320" y="327" text-anchor="middle">ผู้ดูแล (macOS)</text>
+        <text class="sub" x="320" y="345" text-anchor="middle">scripts ผ่าน SSM · ไม่มี SSH</text>
+
+        <!-- external services -->
+        <rect class="zone" x="30" y="500" width="1050" height="100" rx="10"/>
+        <text class="zlbl" x="46" y="520">บริการภายนอกที่ hr-api / hr_mobile เรียก (คีย์ชุด UAT)</text>
+        <rect class="box" x="60" y="535" width="220" height="44" rx="8"/>
+        <text class="lbl" x="170" y="554" text-anchor="middle">AWS S3 (bucket uat)</text>
+        <text class="sub" x="170" y="570" text-anchor="middle">ไฟล์แนบ · presigned URL</text>
+        <rect class="box" x="310" y="535" width="220" height="44" rx="8"/>
+        <text class="lbl" x="420" y="554" text-anchor="middle">SMTP</text>
+        <text class="sub" x="420" y="570" text-anchor="middle">OTP · reset password</text>
+        <rect class="box mob" x="560" y="535" width="220" height="44" rx="8"/>
+        <text class="lbl" x="670" y="554" text-anchor="middle">Firebase (FCM · App Distribution)</text>
+        <text class="sub" x="670" y="570" text-anchor="middle">push · แจก APK/IPA ให้ผู้ทดสอบ</text>
+        <rect class="box" x="810" y="535" width="220" height="44" rx="8"/>
+        <text class="lbl" x="920" y="554" text-anchor="middle">Google Maps API</text>
+        <text class="sub" x="920" y="570" text-anchor="middle">แผนที่ · geofence</text>
+
+        <!-- edges -->
+        <path class="edge in" d="M200 132 H220 V170 H238" marker-end="url(#au1)"/>
+        <path class="edge in" d="M200 229 H220 V194 H238" marker-end="url(#au1)"/>
+        <path class="edge out" d="M478 168 H402" marker-end="url(#au3)"/>
+        <path class="edge in" d="M400 196 H478" marker-end="url(#au1)"/>
+        <path class="edge in" d="M630 168 H650 V142 H668" marker-end="url(#au1)"/>
+        <path class="edge in" d="M630 196 H650 V232 H668" marker-end="url(#au1)"/>
+        <path class="edge" d="M755 174 V198" marker-end="url(#au2)"/>
+        <text class="sub" x="765" y="191">BACKEND_API_URL=http://api:3000</text>
+        <path class="edge" d="M840 232 H878" marker-end="url(#au2)"/>
+        <path class="edge" d="M960 174 V198" marker-end="url(#au2)"/>
+        <path class="edge" d="M960 264 V285 H615 V303" marker-end="url(#au2)"/>
+        <path class="edge adm" d="M400 331 H478" marker-end="url(#au4)"/>
+        <path class="edge adm" d="M320 305 V285 H440 V488 H1090 V331 H1042" marker-end="url(#au4)"/>
+        <path class="edge ext" d="M700 264 V385 H420 V533" marker-end="url(#au2)"/>
+        <text class="sub" x="430" y="490">hr-api → S3 / SMTP / FCM</text>
+        <path class="edge ext" d="M115 268 V415 H670 V533" marker-end="url(#au2)"/>
+        <text class="sub" x="125" y="410">hr_mobile ← APK จาก App Distribution · FCM · Maps</text>
+      </svg>
+      <div class="legend-row"><span class="in">request จากผู้ใช้</span><span class="out">cloudflared ต่อออกหา Cloudflare</span><span class="adm">ผู้ดูแลผ่าน SSM</span><span class="ext">เรียกบริการภายนอก</span></div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">☁</span>AWS ที่ใช้ (5 service)</h3>
+        <ul class="svc">
+          <li><span class="sic">🖥</span><div><b>EC2 × 1 · t4g.small</b><span>Docker + Compose plugin ติดตั้งผ่าน user-data · stop/start ได้ด้วย <code>./stop.sh</code> <code>./start.sh</code></span></div></li>
+          <li><span class="sic">🕸</span><div><b>VPC · IGW</b><span>public subnet เดียว ไม่มี NAT · SG <b>ไม่มี inbound rule</b> เครื่องออกเน็ตด้วย public IP ของตัวเอง</span></div></li>
+          <li><span class="sic">🔐</span><div><b>IAM role + SSM</b><span>AmazonSSMManagedInstanceCore · deploy, logs, shell, DB tunnel ทั้งหมดผ่าน SSM ไม่มี SSH key</span></div></li>
+          <li><span class="sic">💾</span><div><b>EBS 30 GB (gp3, เข้ารหัส)</b><span>volume <code>pgdata</code> ของ postgres อยู่บนดิสก์นี้ · ไม่มี backup อัตโนมัติ ใช้ <code>pg_dump</code> ผ่าน tunnel</span></div></li>
+          <li><span class="sic">🪣</span><div><b>S3 (bucket uat)</b><span>ไฟล์แนบใบลาและรูปโปรไฟล์ผ่าน presigned URL ของ hr-api</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🟠</span>Cloudflare (Free plan)</h3>
+        <ul class="svc">
+          <li><span class="sic">🌐</span><div><b>DNS</b><span>CNAME <code>uat</code> และ <code>api.uat</code> → <code>&lt;tunnel-id&gt;.cfargotunnel.com</code> (Proxied) สร้างโดย <code>create_tunnel.sh</code> ผ่าน Cloudflare API</span></div></li>
+          <li><span class="sic">🚇</span><div><b>Zero Trust Tunnel</b><span>remotely-managed · container รับแค่ token · ingress สองรายการชี้ <code>http://bo:3000</code> และ <code>http://api:3000</code> · TLS จบที่ edge จึงไม่ต้องขอ cert</span></div></li>
+          <li><span class="sic">🛡</span><div><b>Access</b><span>ครอบ <code>uat.nthw.dev</code> ให้เฉพาะอีเมลของผู้ทดสอบเปิดได้ เพราะ UAT ไม่ควรเปิดสาธารณะ (API เปิดไว้ให้ hr_mobile)</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧭</span>ขั้นตอนสร้าง (3 ขั้น · ~6 นาที)</h3>
+        <ol class="steps">
+          <li><code>./create_host.sh</code> VPC + IAM + SG(ว่าง) + EC2 + Docker <small>3–4 นาที</small></li>
+          <li><code>./create_tunnel.sh</code> Tunnel + ingress 2 hostname + CNAME <small>&lt; 1 นาที</small></li>
+          <li><code>./deploy.sh</code> ส่ง <code>compose.yaml</code> ผ่าน SSM → เขียน <code>.env</code> → migrate → <code>compose up -d</code> → รอ 200 <small>1–2 นาที</small></li>
+        </ol>
+        <p class="fine">ขั้น 3 คือคำสั่งที่รันซ้ำตลอดอายุของ environment: <code>APP_TAG=&lt;tag&gt; ./deploy.sh</code> (GitHub Actions เรียกให้อัตโนมัติ ดูหัวข้อ CI/CD) · ตรวจสอบ <code>./verify.sh</code> · ลบทิ้ง <code>./destroy.sh --yes</code> (~2 นาที)</p>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <p class="pre-cap"><code>compose.yaml</code> บนเครื่อง UAT (<code>/opt/northhr</code>)</p>
+<pre><code>name: northhr
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 run
+    environment: { TUNNEL_TOKEN: "${TUNNEL_TOKEN}" }
+    depends_on: [bo, api]
+    restart: always
+
+  bo:                                  # hr-bo · Next.js standalone
+    image: "${BO_IMAGE}:${APP_TAG}"    # Docker Hub · arm64
+    environment:
+      BACKEND_API_URL: http://api:3000
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY}"
+    restart: always
+
+  api:                                 # hr-api · NestJS
+    image: "${API_IMAGE}:${APP_TAG}"   # Docker Hub · arm64
+    env_file: api.env                  # POSTGRES_PRISMA_URL JWT_* AWS_* SMTP_* CORS_*
+    environment: { PORT: "3000" }
+    depends_on:
+      db: { condition: service_healthy }
+    restart: always
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:5432:5432"]     # loopback เท่านั้น
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+volumes:
+  pgdata: {}</code></pre>
+      </div>
+      <div class="card">
+        <p class="pre-cap">เวิร์กโฟลว์ UAT ประจำวัน (รันจาก macOS ทั้งหมดผ่าน SSM)</p>
+<pre><code># ขึ้นเวอร์ชันใหม่ด้วยมือ (ปกติ GitHub Actions ทำให้)
+APP_TAG=2025.09.22-a1b2c3d ./deploy.sh
+
+# เริ่มรอบทดสอบใหม่ด้วยข้อมูลสะอาด (ลบ volume แล้ว migrate + seed ใหม่)
+./reset_db.sh
+
+# ดู log ของ hr-api ตอนเจอบั๊ก
+./logs.sh api 200
+
+# ต่อ DBeaver / pg_dump ที่ localhost:15432 (ค้างไว้)
+./connect_db.sh
+pg_dump -h localhost -p 15432 -U northhr northhr > uat.sql
+
+# ปิดนอกเวลางาน / เปิดกลับ (เหลือค่า EBS + IP ราว $0.1/วัน)
+./stop.sh
+./start.sh
+
+# environment ที่สองสำหรับทดสอบ branch อื่นคู่ขนาน (ได้ uat2.nthw.dev)
+ENV_NAME=uat2 ./create_host.sh
+ENV_NAME=uat2 ./create_tunnel.sh
+ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
+        <ul class="feat" style="margin-top:14px">
+          <li><b>ทางเข้าเดียว</b> Cloudflare Tunnel สำหรับผู้ใช้ และ SSM สำหรับผู้ดูแล ไม่มี port เปิดใน SG</li>
+          <li><b>ข้อแลกที่ยอมรับ</b> เครื่องเดียว ไม่ HA ข้อมูลอยู่บน EBS หายไปพร้อมเครื่องเมื่อ destroy → <code>pg_dump</code> ก่อนทุกครั้ง</li>
+          <li><b>ขยาย</b> ได้แค่แนวตั้ง (<code>INSTANCE_TYPE=t4g.medium</code>) ถ้าต้องมีผู้ทดสอบพร้อมกันจำนวนมากให้ย้ายไปโครงสร้าง PROD</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- PROD ---------- -->
+<section class="section prod" id="deploy-prod">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Deploy · PROD</span>
+        <h2>hr_mobile / browser → Cloudflare edge → Tunnel → cloudflared pod → hr-bo / hr-api pod → RDS</h2>
+        <p>k3s บน EC2 หลายเครื่องคนละ AZ รัน pod ของ hr-bo และ hr-api พร้อม HPA · ฐานข้อมูลเป็น RDS PostgreSQL Multi-AZ · ขาเข้ายังเป็น Cloudflare Tunnel เหมือน UAT จึงไม่มี ALB, ACM, NAT และไม่มี inbound 80/443</p>
+      </div>
+    </div>
+
+    <div class="darch">
+      <h3>สถาปัตยกรรม PROD (ผู้ใช้ 3,000–4,000 คน)</h3>
+      <p>โหลดของระบบ HR เป็นช่วงสั้น ๆ: check-in เช้าและ check-out เย็นราว 30 นาที ถ้าพนักงาน 4,000 คนลงเวลาในช่วงนั้นจะได้เฉลี่ยราว 2–3 request/วินาที และ burst หลักสิบ request/วินาที ซึ่ง hr-api 2–6 pod บน 3 node รับได้สบาย จุดที่ต้องระวังคือฐานข้อมูลและ connection pool จึงยกไป RDS</p>
+      <svg viewBox="0 0 1100 680" role="img" aria-label="แผนภาพการ deploy NorthHR PROD บน EC2 + k3s + Cloudflare Tunnel + RDS">
+        <defs>
+          <marker id="ap1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--cf)"/></marker>
+          <marker id="ap2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+          <marker id="ap3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ok)"/></marker>
+          <marker id="ap4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--local)"/></marker>
+        </defs>
+
+        <rect class="zone p" x="430" y="30" width="650" height="510" rx="12"/>
+        <text class="zlbl" x="446" y="50">VPC 10.20.0.0/16 · public subnet 2 AZ · ไม่มี NAT · SG node: 6443 จาก IP ผู้ดูแล + self เท่านั้น</text>
+        <rect class="zone" x="450" y="70" width="440" height="400" rx="10"/>
+        <text class="zlbl" x="466" y="90">k3s cluster · server t4g.medium (AZ-a) + agent t4g.small ×2 (AZ-a, AZ-b)</text>
+
+        <!-- clients -->
+        <rect class="box bo" x="30" y="120" width="170" height="64" rx="10"/>
+        <text class="lbl" x="115" y="146" text-anchor="middle">HR / Admin · browser</text>
+        <text class="sub" x="115" y="164" text-anchor="middle">https://hr.nthw.dev → hr-bo</text>
+
+        <rect class="box mob" x="30" y="210" width="170" height="78" rx="10"/>
+        <text class="lbl" x="115" y="236" text-anchor="middle">hr_mobile · พนักงาน 3–4 พันคน</text>
+        <text class="sub" x="115" y="254" text-anchor="middle">Play Store / App Store · BASE_URL=</text>
+        <text class="sub" x="115" y="270" text-anchor="middle">https://api.hr.nthw.dev</text>
+
+        <!-- Cloudflare -->
+        <rect class="box cf" x="240" y="170" width="160" height="64" rx="10"/>
+        <text class="lbl" x="320" y="196" text-anchor="middle">Cloudflare edge</text>
+        <text class="sub" x="320" y="214" text-anchor="middle">DNS · WAF · rate limit · Tunnel</text>
+
+        <!-- cloudflared -->
+        <rect class="box pod" x="480" y="170" width="140" height="64" rx="10"/>
+        <text class="lbl" x="550" y="196" text-anchor="middle">cloudflared ×3</text>
+        <text class="sub" x="550" y="214" text-anchor="middle">1 pod ต่อ node · anti-affinity</text>
+
+        <!-- hr-bo pods -->
+        <rect class="box bo" x="660" y="120" width="200" height="64" rx="10"/>
+        <text class="lbl" x="760" y="146" text-anchor="middle">hr-bo pod ×2–4</text>
+        <text class="sub" x="760" y="164" text-anchor="middle">HPA CPU 60% · Service bo:3000</text>
+
+        <!-- hr-api pods -->
+        <rect class="box api" x="660" y="210" width="200" height="64" rx="10"/>
+        <text class="lbl" x="760" y="236" text-anchor="middle">hr-api pod ×2–6</text>
+        <text class="sub" x="760" y="254" text-anchor="middle">HPA CPU 60% · Service api:3000 · PDB</text>
+
+        <!-- migrate job -->
+        <rect class="box pod" x="660" y="300" width="200" height="54" rx="10"/>
+        <text class="lbl" x="760" y="322" text-anchor="middle">Job: prisma migrate deploy</text>
+        <text class="sub" x="760" y="340" text-anchor="middle">รันก่อน rollout ทุกครั้ง</text>
+
+        <!-- secrets -->
+        <rect class="box pod" x="660" y="390" width="200" height="54" rx="10"/>
+        <text class="lbl" x="760" y="412" text-anchor="middle">Secret: rds-credentials · app-secrets</text>
+        <text class="sub" x="760" y="430" text-anchor="middle">DB_* JWT_* AWS_* SMTP_*</text>
+
+        <!-- SSM -->
+        <rect class="box p" x="480" y="390" width="150" height="54" rx="10"/>
+        <text class="lbl" x="555" y="412" text-anchor="middle">SSM agent</text>
+        <text class="sub" x="555" y="430" text-anchor="middle">kubectl จาก CI · psql tunnel</text>
+
+        <!-- RDS -->
+        <rect class="box p" x="910" y="170" width="150" height="64" rx="10"/>
+        <text class="lbl" x="985" y="196" text-anchor="middle">RDS PostgreSQL 16</text>
+        <text class="sub" x="985" y="214" text-anchor="middle">db.t4g.small · Multi-AZ · private</text>
+
+        <rect class="box p" x="910" y="260" width="150" height="54" rx="10"/>
+        <text class="lbl" x="985" y="282" text-anchor="middle">Automated backup</text>
+        <text class="sub" x="985" y="300" text-anchor="middle">snapshot รายวัน · PITR 7 วัน</text>
+
+        <rect class="box p" x="910" y="390" width="150" height="54" rx="10"/>
+        <text class="lbl" x="985" y="412" text-anchor="middle">IAM · EIP · IGW</text>
+        <text class="sub" x="985" y="430" text-anchor="middle">role SSM · IP คงที่ของ server</text>
+
+        <rect class="box p" x="910" y="470" width="150" height="44" rx="10"/>
+        <text class="lbl" x="985" y="489" text-anchor="middle">CloudWatch</text>
+        <text class="sub" x="985" y="505" text-anchor="middle">RDS metrics · alarm → email</text>
+
+        <!-- Admin -->
+        <rect class="box" x="240" y="390" width="160" height="54" rx="10"/>
+        <text class="lbl" x="320" y="412" text-anchor="middle">ผู้ดูแล (macOS)</text>
+        <text class="sub" x="320" y="430" text-anchor="middle">kubectl → EIP:6443 · SSM</text>
+
+        <!-- external -->
+        <rect class="zone" x="30" y="565" width="1050" height="95" rx="10"/>
+        <text class="zlbl" x="46" y="585">บริการภายนอก (คีย์ชุด production แยกจาก UAT)</text>
+        <rect class="box" x="60" y="600" width="220" height="44" rx="8"/>
+        <text class="lbl" x="170" y="619" text-anchor="middle">AWS S3 (bucket prod)</text>
+        <text class="sub" x="170" y="635" text-anchor="middle">versioning · lifecycle</text>
+        <rect class="box" x="310" y="600" width="220" height="44" rx="8"/>
+        <text class="lbl" x="420" y="619" text-anchor="middle">SMTP / Amazon SES</text>
+        <text class="sub" x="420" y="635" text-anchor="middle">OTP · reset password</text>
+        <rect class="box mob" x="560" y="600" width="220" height="44" rx="8"/>
+        <text class="lbl" x="670" y="619" text-anchor="middle">Firebase (FCM)</text>
+        <text class="sub" x="670" y="635" text-anchor="middle">push notification ไป hr_mobile</text>
+        <rect class="box" x="810" y="600" width="220" height="44" rx="8"/>
+        <text class="lbl" x="920" y="619" text-anchor="middle">Google Maps API</text>
+        <text class="sub" x="920" y="635" text-anchor="middle">จำกัด key ตามโดเมน/แอป</text>
+
+        <!-- edges -->
+        <path class="edge in" d="M200 152 H220 V190 H238" marker-end="url(#ap1)"/>
+        <path class="edge in" d="M200 249 H220 V214 H238" marker-end="url(#ap1)"/>
+        <path class="edge out" d="M478 188 H402" marker-end="url(#ap3)"/>
+        <path class="edge in" d="M400 216 H478" marker-end="url(#ap1)"/>
+        <path class="edge in" d="M620 188 H640 V152 H658" marker-end="url(#ap1)"/>
+        <path class="edge in" d="M620 216 H640 V242 H658" marker-end="url(#ap1)"/>
+        <path class="edge" d="M760 184 V208" marker-end="url(#ap2)"/>
+        <text class="sub" x="770" y="201">http://api:3000</text>
+        <path class="edge" d="M860 242 H880 V202 H908" marker-end="url(#ap2)"/>
+        <path class="edge" d="M860 327 H880 V202"/>
+        <path class="edge" d="M985 234 V258" marker-end="url(#ap2)"/>
+        <path class="edge ext" d="M985 314 V468" marker-end="url(#ap2)"/>
+        <path class="edge" d="M760 390 V356" marker-end="url(#ap2)"/>
+        <path class="edge adm" d="M400 417 H478" marker-end="url(#ap4)"/>
+        <path class="edge adm" d="M320 390 V350 H440 V550 H1090 V417 H1062" marker-end="url(#ap4)"/>
+        <path class="edge ext" d="M700 274 V480 H420 V598" marker-end="url(#ap2)"/>
+        <text class="sub" x="430" y="555">hr-api → S3 / SES / FCM</text>
+        <path class="edge ext" d="M115 288 V515 H670 V598" marker-end="url(#ap2)"/>
+        <text class="sub" x="125" y="510">hr_mobile ← FCM push · Maps</text>
+      </svg>
+      <div class="legend-row"><span class="in">request จากผู้ใช้</span><span class="out">cloudflared ต่อออกหา Cloudflare</span><span class="adm">ผู้ดูแลผ่าน SSM / kubectl</span><span class="ext">เรียกบริการภายนอก</span></div>
+    </div>
+
+    <div class="note">
+      <b>จุดออกแบบสำคัญของ PROD</b>
+      <ul>
+        <li>Deployment <code>bo</code> และ <code>api</code> แยกกัน คนละ Service, คนละ HPA, และมี <b>PodDisruptionBudget</b> <code>minAvailable: 1</code> ให้ patch node ทีละเครื่องได้โดยไม่ล่ม</li>
+        <li>3 node คนละ AZ (<code>./add_node.sh 2</code>) · <code>topologySpreadConstraints</code> ให้ pod ของ api/bo และ cloudflared กระจายทุก node · cloudflared 3 replica = 3 connector ของ tunnel เดียว Cloudflare กระจายโหลดให้เอง</li>
+        <li>RDS <code>db.t4g.small</code> <b>Multi-AZ</b> เปิด automated backup 7 วัน + deletion protection · hr-api ต่อผ่าน <code>POSTGRES_PRISMA_URL</code> ที่ประกอบจาก secret <code>rds-credentials</code> (ตั้ง <code>connection_limit</code> ต่อ pod ให้รวมไม่เกิน max_connections ของ RDS)</li>
+        <li>ทุก release รัน <b>Job</b> <code>prisma migrate deploy</code> ด้วย image hr-api ตัวเดียวกัน แล้ว <code>kubectl wait --for=condition=complete</code> ก่อน rollout · migration เขียนแบบ backward-compatible (expand → migrate → contract) เพราะ pod เก่าและใหม่รันพร้อมกันระหว่าง rolling update</li>
+        <li>Cloudflare ฝั่ง PROD เปิด <b>WAF managed rules</b>, rate limit ที่ <code>/api/v1/auth/*</code> และ Bot Fight Mode · เปิด Cloudflare Access เฉพาะโดเมน back-office ถ้าต้องการจำกัดให้ HR ที่มีอีเมลองค์กร</li>
+      </ul>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">☁</span>AWS ที่ใช้ (7 service)</h3>
+        <ul class="svc">
+          <li><span class="sic">🖥</span><div><b>EC2 × 3 · k3s</b><span>server t4g.medium (AL2023, arm64) + agent t4g.small ×2 join ด้วย node-token ผ่าน SSM · เพิ่มได้อีกด้วย <code>./add_node.sh N</code></span></div></li>
+          <li><span class="sic">🐘</span><div><b>RDS PostgreSQL 16 · db.t4g.small Multi-AZ</b><span>subnet group 2 AZ · SG รับ 5432 จาก SG ของ node เท่านั้น · storage gp3 50 GB autoscaling · backup รายวัน + PITR</span></div></li>
+          <li><span class="sic">🕸</span><div><b>VPC · IGW · EIP</b><span>public subnet 2 AZ ไม่มี NAT · EIP ผูก server ให้ kubeconfig ชี้ที่เดิม · SG node เปิดแค่ 6443 จาก IP ผู้ดูแล + self</span></div></li>
+          <li><span class="sic">🔐</span><div><b>IAM role + SSM</b><span>role เดียวสำหรับทุก node · ไม่มี SSH · GitHub Actions สั่ง kubectl ผ่าน SSM ด้วย role OIDC</span></div></li>
+          <li><span class="sic">🪣</span><div><b>S3 (bucket prod)</b><span>versioning + lifecycle · hr-api ใช้ IAM user เฉพาะ bucket นี้ผ่าน <code>AWS_ACCESS_KEY_ID</code> ใน secret</span></div></li>
+          <li><span class="sic">📈</span><div><b>CloudWatch</b><span>metrics ของ RDS (CPU, connections, free storage) + alarm ส่งอีเมล · log ของ pod ดูด้วย <code>kubectl logs</code> หรือ ship ด้วย Fluent Bit ภายหลัง</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☸</span>Workload บน k3s</h3>
+        <ul class="feat">
+          <li><b>hr-api</b> Deployment 2 replica · HPA 2→6 ที่ CPU 60% · requests 250m/256Mi · readiness ที่ <code>/api/v1/health</code> · PDB minAvailable 1</li>
+          <li><b>hr-bo</b> Deployment 2 replica · HPA 2→4 · requests 150m/256Mi · <code>BACKEND_API_URL=http://api:3000</code> (ภายใน cluster ไม่ออก Cloudflare)</li>
+          <li><b>cloudflared</b> Deployment 3 replica · anti-affinity ต่อ node · liveness <code>/ready</code> :2000 · token จาก secret <code>cloudflared-token</code></li>
+          <li><b>migrate</b> Job ต่อ release · <code>backoffLimit: 0</code> · ถ้า fail จะไม่ rollout ต่อ</li>
+          <li><b>Secret</b> <code>rds-credentials</code> (สร้างตอนสร้าง RDS) และ <code>app-secrets</code> (JWT, S3, SMTP, Maps) apply จากไฟล์นอก git · ขั้นถัดไปคือดึงจาก AWS Secrets Manager ผ่าน External Secrets</li>
+          <li><b>ไม่มี Ingress controller</b> routing อยู่ที่ ingress ของ tunnel ฝั่ง Cloudflare: <code>hr.nthw.dev → http://bo.default.svc:3000</code> และ <code>api.hr.nthw.dev → http://api.default.svc:3000</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧭</span>ขั้นตอนสร้าง (5 ขั้น · ~20 นาที)</h3>
+        <ol class="steps">
+          <li><code>./create_node.sh</code> VPC + IAM + EIP + EC2 server + k3s + kubeconfig <small>5 นาที</small></li>
+          <li><code>./create_rds.sh</code> subnet group + SG + RDS Multi-AZ + secret <code>rds-credentials</code> <small>10–12 นาที</small></li>
+          <li><code>./create_tunnel.sh</code> Tunnel + ingress 2 hostname + CNAME + secret token <small>&lt; 1 นาที</small></li>
+          <li><code>./add_node.sh 2</code> agent 2 เครื่องคนละ AZ join cluster <small>3 นาที</small></li>
+          <li><code>./deploy.sh</code> apply secrets → Job migrate → api/bo/cloudflared + HPA → รอ 200 <small>1–2 นาที</small></li>
+        </ol>
+        <p class="fine">ตรวจสอบ <code>./verify.sh</code> · ทดสอบ scale <code>./load_test.sh 120</code> ดู HPA ขยาย 2→6 · ต่อ DB <code>./connect_rds.sh</code> · ลบทิ้ง <code>./destroy.sh --yes</code> (ต้องปิด deletion protection ของ RDS ก่อน)</p>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <p class="pre-cap">ส่วนของ <code>app.yaml</code> สำหรับ hr-api (bo ทำเหมือนกัน เปลี่ยนชื่อ image port และ HPA max)</p>
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector: { matchLabels: { app: api } }
+      containers:
+      - name: api
+        image: northhr/hr-api:APP_TAG_PLACEHOLDER   # Docker Hub · arm64
+        ports: [{ containerPort: 3000 }]
+        env: [{ name: PORT, value: "3000" }]
+        envFrom:
+        - secretRef: { name: rds-credentials }
+        - secretRef: { name: app-secrets }
+        readinessProbe:
+          httpGet: { path: /api/v1/health, port: 3000 }
+          periodSeconds: 5
+        resources:
+          requests: { cpu: 250m, memory: 256Mi }
+          limits:   { memory: 512Mi }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: api }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: api }
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource: { name: cpu, target: { type: Utilization, averageUtilization: 60 } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: api }
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: api } }</code></pre>
+      </div>
+      <div class="card">
+        <p class="pre-cap">ลำดับใน <code>deploy.sh</code> ฝั่ง PROD (ทุก release · CI เรียกผ่าน SSM)</p>
+<pre><code># 1. secrets (ไฟล์อยู่นอก git)
+kubectl apply -f secrets/app-secrets.yaml
+
+# 2. snapshot RDS แล้ว migrate ด้วย image เดียวกับ hr-api ก่อน rollout
+aws rds create-db-snapshot --db-instance-identifier northhr-prod \
+  --db-snapshot-identifier pre-$APP_TAG
+sed "s|APP_TAG_PLACEHOLDER|$APP_TAG|" migrate-job.yaml | kubectl replace --force -f -
+kubectl wait job/migrate --for=condition=complete --timeout=180s   # fail → หยุด ไม่ rollout
+
+# 3. update pod: เปลี่ยน image tag แล้ว rolling update
+kubectl set image deploy/api api=northhr/hr-api:$APP_TAG
+kubectl set image deploy/bo  bo=northhr/hr-bo:$APP_TAG
+kubectl rollout status deploy/api deploy/bo --timeout=180s
+
+# 4. รอ https://api.hr.nthw.dev/api/v1/health = 200
+
+# rollback ถ้าจำเป็น (image เดิมยังอยู่ใน Docker Hub)
+kubectl rollout undo deploy/api deploy/bo</code></pre>
+        <ul class="feat" style="margin-top:14px">
+          <li><b>ความพร้อมใช้งาน</b> pod กระจาย 3 node 2 AZ · RDS Multi-AZ failover เอง · Cloudflare กระจายไป connector ที่ยังอยู่</li>
+          <li><b>ข้อแลกของ k3s</b> control plane อยู่บน server เครื่องเดียว (SQLite แทน etcd) ถ้า server ดับ pod บน agent ยังรับ request ต่อได้แต่ scale/rollout ไม่ได้จนกว่าจะกลับมา · snapshot EBS ของ server รายวัน · ถ้าต้องการ SLA ของ control plane ให้ยก manifest ชุดนี้ไป Amazon EKS ได้ทั้งไฟล์</li>
+          <li><b>patch OS</b> ทำเองผ่าน SSM ทีละ node: <code>kubectl drain</code> → <code>dnf update</code> → reboot → <code>uncordon</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- CI/CD ---------- -->
+<section class="section cicd" id="deploy-cicd">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">CI/CD</span>
+        <h2>GitHub Actions → Docker Hub → update pod</h2>
+        <p>ทั้งสอง environment ใช้ image ตัวเดียวกันจาก Docker Hub ต่างกันแค่คำสั่งอัปเดตปลายทาง: UAT เป็น <code>docker compose up -d</code> ส่วน PROD เป็น <code>kubectl set image</code> · GitHub Actions เข้าถึงเครื่องผ่าน AWS SSM ด้วย role OIDC จึงไม่ต้องเปิด port และไม่เก็บ AWS key หรือ SSH key ใน GitHub</p>
+      </div>
+    </div>
+
+    <div class="darch">
+      <h3>Pipeline</h3>
+      <p>เส้นน้ำเงิน = ขั้นใน pipeline · ทุก push ขึ้น <code>main</code> ไป UAT อัตโนมัติ · tag <code>v*</code> ไป PROD หลังผู้ดูแลกดอนุมัติใน GitHub Environment <code>production</code></p>
+      <svg viewBox="0 0 1100 400" role="img" aria-label="แผนภาพ CI/CD ของ NorthHR: GitHub Actions build image ส่ง Docker Hub แล้วอัปเดต container บน UAT และ pod บน PROD">
+        <defs>
+          <marker id="ac1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--local)"/></marker>
+          <marker id="ac2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+        </defs>
+
+        <!-- developer -->
+        <rect class="box" x="30" y="130" width="140" height="64" rx="10"/>
+        <text class="lbl" x="100" y="156" text-anchor="middle">นักพัฒนา</text>
+        <text class="sub" x="100" y="174" text-anchor="middle">git push main · git tag v1.4.0</text>
+
+        <!-- GitHub -->
+        <rect class="zone" x="200" y="40" width="300" height="320" rx="10"/>
+        <text class="zlbl" x="216" y="60">GitHub · repo hr-api และ hr-bo</text>
+        <rect class="box gh" x="220" y="90" width="260" height="64" rx="10"/>
+        <text class="lbl" x="350" y="116" text-anchor="middle">1. build · test</text>
+        <text class="sub" x="350" y="134" text-anchor="middle">npm ci · lint · unit test · prisma generate</text>
+        <rect class="box gh" x="220" y="170" width="260" height="64" rx="10"/>
+        <text class="lbl" x="350" y="196" text-anchor="middle">2. docker buildx · Trivy scan</text>
+        <text class="sub" x="350" y="214" text-anchor="middle">--platform linux/arm64 · cache GHA</text>
+        <rect class="box gh" x="220" y="250" width="260" height="64" rx="10"/>
+        <text class="lbl" x="350" y="276" text-anchor="middle">3. docker push</text>
+        <text class="sub" x="350" y="294" text-anchor="middle">tag = &lt;date&gt;-&lt;sha&gt; หรือ v1.4.0 · + latest</text>
+        <text class="sub" x="350" y="345" text-anchor="middle">secret: DOCKERHUB_USERNAME / DOCKERHUB_TOKEN</text>
+
+        <!-- Docker Hub -->
+        <rect class="box" x="540" y="150" width="170" height="90" rx="10"/>
+        <text class="lbl" x="625" y="180" text-anchor="middle">Docker Hub</text>
+        <text class="sub" x="625" y="200" text-anchor="middle">northhr/hr-api:&lt;tag&gt;</text>
+        <text class="sub" x="625" y="216" text-anchor="middle">northhr/hr-bo:&lt;tag&gt;</text>
+
+        <!-- deploy jobs -->
+        <rect class="box gh" x="540" y="40" width="170" height="64" rx="10"/>
+        <text class="lbl" x="625" y="66" text-anchor="middle">4a. job deploy-uat</text>
+        <text class="sub" x="625" y="84" text-anchor="middle">อัตโนมัติเมื่อ push main</text>
+        <rect class="box gh" x="540" y="290" width="170" height="64" rx="10"/>
+        <text class="lbl" x="625" y="316" text-anchor="middle">4b. job deploy-prod</text>
+        <text class="sub" x="625" y="334" text-anchor="middle">tag v* + กดอนุมัติ (reviewer)</text>
+
+        <!-- SSM -->
+        <rect class="box" x="750" y="150" width="130" height="90" rx="10"/>
+        <text class="lbl" x="815" y="180" text-anchor="middle">AWS SSM</text>
+        <text class="sub" x="815" y="200" text-anchor="middle">role OIDC ของ Actions</text>
+        <text class="sub" x="815" y="216" text-anchor="middle">SendCommand ตาม tag เครื่อง</text>
+
+        <!-- UAT target -->
+        <rect class="box u" x="920" y="40" width="160" height="90" rx="10"/>
+        <text class="lbl" x="1000" y="66" text-anchor="middle">UAT · EC2 compose</text>
+        <text class="sub" x="1000" y="86" text-anchor="middle">docker compose pull</text>
+        <text class="sub" x="1000" y="102" text-anchor="middle">migrate → up -d → health 200</text>
+        <text class="sub" x="1000" y="118" text-anchor="middle">= update container</text>
+
+        <!-- PROD target -->
+        <rect class="box p" x="920" y="270" width="160" height="100" rx="10"/>
+        <text class="lbl" x="1000" y="296" text-anchor="middle">PROD · k3s</text>
+        <text class="sub" x="1000" y="316" text-anchor="middle">snapshot RDS → Job migrate</text>
+        <text class="sub" x="1000" y="332" text-anchor="middle">kubectl set image → rollout</text>
+        <text class="sub" x="1000" y="348" text-anchor="middle">status → health 200</text>
+        <text class="sub" x="1000" y="364" text-anchor="middle">= update pod (rolling)</text>
+
+        <!-- edges -->
+        <path class="edge ci" d="M170 162 H190 V122 H218" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M350 154 V168" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M350 234 V248" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M480 282 H510 V195 H538" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M510 195 V72 H538" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M510 195 V322 H538" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M710 72 H730 V180 H748" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M710 322 H730 V210 H748" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M880 180 H900 V85 H918" marker-end="url(#ac1)"/>
+        <path class="edge ci" d="M880 210 H900 V320 H918" marker-end="url(#ac1)"/>
+        <path class="edge ext" d="M1000 132 V140 H625 V148" marker-end="url(#ac2)"/>
+        <path class="edge ext" d="M1000 268 V250 H625 V242" marker-end="url(#ac2)"/>
+        <text class="sub" x="815" y="136" text-anchor="middle">pull image</text>
+        <text class="sub" x="815" y="262" text-anchor="middle">pull image</text>
+      </svg>
+      <div class="legend-row"><span class="ci">ขั้นใน pipeline</span><span class="ext">เครื่องปลายทาง pull image จาก Docker Hub</span></div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">🏗</span>Build → Docker Hub</h3>
+        <ul class="feat">
+          <li><b>Trigger</b> push ไป <code>main</code> ของ hr-api หรือ hr-bo → tag <code>&lt;date&gt;-&lt;sha&gt;</code> · git tag <code>v*</code> → tag เวอร์ชัน · ทั้งคู่ push <code>latest</code> ด้วย</li>
+          <li><b>Buildx</b> <code>--platform linux/arm64</code> ให้ตรง t4g · cache layer ใน GHA · Dockerfile หลายขั้นของแต่ละโปรเจกต์</li>
+          <li><b>Scan</b> Trivy ตรวจ image ก่อน push · fail เมื่อพบ CRITICAL</li>
+          <li><b>Secret</b> <code>DOCKERHUB_USERNAME</code> + <code>DOCKERHUB_TOKEN</code> (access token สิทธิ์ write เฉพาะ repo northhr/*)</li>
+        </ul>
+      </div>
+      <div class="card uat">
+        <h3><span class="ic">🧪</span>Update container บน UAT (อัตโนมัติ)</h3>
+        <ul class="feat">
+          <li><b>เมื่อ</b> job build จาก <code>main</code> ผ่าน</li>
+          <li><b>สิทธิ์</b> role OIDC ให้ <code>ssm:SendCommand</code> เฉพาะ instance ที่ tag <code>env=uat</code></li>
+          <li><b>คำสั่งบนเครื่อง</b> เขียน <code>APP_TAG</code> ลง <code>.env</code> → <code>docker compose pull</code> → <code>compose run --rm api npx prisma migrate deploy</code> → <code>compose up -d</code> (recreate เฉพาะ service ที่ image เปลี่ยน DB ไม่ถูกแตะ)</li>
+          <li><b>ตรวจ</b> job รอ <code>https://api.uat.nthw.dev/api/v1/health</code> = 200 · fail = job แดง ให้ rerun ด้วย tag ก่อนหน้า</li>
+        </ul>
+      </div>
+      <div class="card prod">
+        <h3><span class="ic">🚀</span>Update pod บน PROD (กดอนุมัติ)</h3>
+        <ul class="feat">
+          <li><b>เมื่อ</b> tag <code>v*</code> และผ่าน UAT แล้ว · GitHub Environment <code>production</code> ต้องมี reviewer กดอนุมัติก่อน job รัน</li>
+          <li><b>สิทธิ์</b> role OIDC ให้ <code>ssm:SendCommand</code> ที่ server k3s (tag <code>env=prod</code>) · kubectl รันบนเครื่องผ่าน SSM ไม่ต้องเปิด 6443 ให้ runner</li>
+          <li><b>คำสั่งบนเครื่อง</b> snapshot RDS → Job <code>prisma migrate deploy</code> → <code>kubectl set image deploy/api deploy/bo</code> → <code>rollout status</code> · pod เก่าถูกแทนทีละตัว ผู้ใช้ไม่เห็น downtime</li>
+          <li><b>rollback</b> <code>kubectl rollout undo</code> หรือ rerun job ด้วย tag ก่อนหน้า · DB กลับด้วย snapshot ก่อน migrate</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <p class="pre-cap"><code>.github/workflows/deploy.yml</code> ของ hr-api (hr-bo เหมือนกัน เปลี่ยนชื่อ image)</p>
+<pre><code>name: build-and-deploy
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions: { id-token: write, contents: read }
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs: { tag: ${{ steps.meta.outputs.tag }} }
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else echo "tag=$(date +%Y.%m.%d)-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT; fi
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with: { username: ${{ secrets.DOCKERHUB_USERNAME }}, password: ${{ secrets.DOCKERHUB_TOKEN }} }
+      - uses: docker/build-push-action@v6
+        with:
+          platforms: linux/arm64
+          push: true
+          tags: |
+            northhr/hr-api:${{ steps.meta.outputs.tag }}
+            northhr/hr-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-uat:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ vars.AWS_DEPLOY_ROLE }}, aws-region: ap-southeast-1 }
+      - run: |
+          aws ssm send-command --targets Key=tag:env,Values=uat \
+            --document-name AWS-RunShellScript \
+            --parameters commands="cd /opt/northhr && APP_TAG=${{ needs.build.outputs.tag }} ./update.sh" \
+            --cloud-watch-output-config CloudWatchOutputEnabled=true
+
+  deploy-prod:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production          # reviewer กดอนุมัติที่นี่
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ vars.AWS_DEPLOY_ROLE }}, aws-region: ap-southeast-1 }
+      - run: |
+          aws ssm send-command --targets Key=tag:env,Values=prod-server \
+            --document-name AWS-RunShellScript \
+            --parameters commands="cd /opt/northhr && APP_TAG=${{ needs.build.outputs.tag }} ./update.sh"</code></pre>
+      </div>
+      <div class="card">
+        <p class="pre-cap"><code>update.sh</code> บนเครื่องปลายทาง (สคริปต์ที่ SSM เรียก)</p>
+<pre><code># ---- UAT (/opt/northhr/update.sh) ----
+set -euo pipefail
+sed -i "s/^APP_TAG=.*/APP_TAG=$APP_TAG/" .env
+docker compose pull api bo
+docker compose run --rm api npx prisma migrate deploy
+docker compose up -d                       # recreate เฉพาะ api / bo
+for i in $(seq 1 30); do
+  curl -fs http://localhost:3000/api/v1/health >/dev/null 2>&1 \
+    || docker compose exec -T api wget -qO- localhost:3000/api/v1/health >/dev/null \
+    && exit 0; sleep 2
+done; echo "health check failed"; exit 1
+
+# ---- PROD (/opt/northhr/update.sh บน k3s server) ----
+set -euo pipefail
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+aws rds create-db-snapshot --db-instance-identifier northhr-prod \
+  --db-snapshot-identifier "pre-${APP_TAG//./-}" --region ap-southeast-1
+sed "s|APP_TAG_PLACEHOLDER|$APP_TAG|" migrate-job.yaml | kubectl replace --force -f -
+kubectl wait job/migrate --for=condition=complete --timeout=180s
+kubectl set image deploy/api api=northhr/hr-api:$APP_TAG
+kubectl set image deploy/bo  bo=northhr/hr-bo:$APP_TAG
+kubectl rollout status deploy/api --timeout=180s
+kubectl rollout status deploy/bo  --timeout=180s</code></pre>
+        <ul class="feat" style="margin-top:14px">
+          <li><b>ทำไมผ่าน SSM</b> เครื่อง UAT ไม่มี inbound rule และ PROD เปิดแค่ 6443 จาก IP ผู้ดูแล runner ของ GitHub จึงต่อตรงไม่ได้ SSM ให้รันคำสั่งบนเครื่องได้โดยไม่เปิด port และ log คำสั่งทุกครั้ง</li>
+          <li><b>image เดียวกันทุก environment</b> tag ที่ผ่าน UAT คือ tag ที่จะ push เป็น <code>v*</code> ไป PROD ไม่ build ใหม่</li>
+          <li><b>hr_mobile</b> มี workflow แยก: tag <code>mobile-v*</code> → build APK/IPA ด้วย <code>.env</code> ของ environment → Firebase App Distribution (UAT) / store (PROD) ดูหัวข้อ hr_mobile</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- CONFIG ---------- -->
+<section class="section deploy" id="deploy-config">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">การตั้งค่าต่อ environment</span>
+        <h2>สิ่งที่ต่างกันระหว่าง UAT และ PROD</h2>
+        <p>image เดียวกัน โค้ดเดียวกัน ต่างกันเฉพาะค่า config และบริการรอบข้าง</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>เรื่อง</th><th class="cu">UAT</th><th class="cp">PROD</th></tr></thead>
+        <tbody>
+          <tr><td>image</td><td class="cu"><code>northhr/hr-bo</code> + <code>northhr/hr-api</code> tag เดียวกัน · arm64 · Docker Hub</td><td class="cp">เหมือน UAT · tag <code>v*</code> เท่านั้น</td></tr>
+          <tr><td>hostname ใน tunnel</td><td class="cu"><code>uat.nthw.dev → http://bo:3000</code><br><code>api.uat.nthw.dev → http://api:3000</code></td><td class="cp"><code>hr.nthw.dev → http://bo.default.svc.cluster.local:3000</code><br><code>api.hr.nthw.dev → http://api.default.svc.cluster.local:3000</code></td></tr>
+          <tr><td>config ของ hr-api</td><td class="cu"><code>api.env</code> บนเครื่องใน <code>/opt/northhr</code> generate โดย <code>deploy.sh</code> จากไฟล์ที่เก็บนอก git</td><td class="cp">Secret <code>app-secrets</code> apply จากไฟล์นอก git · ต่อไปใช้ External Secrets + Secrets Manager</td></tr>
+          <tr><td>ฐานข้อมูล</td><td class="cu">postgres container · <code>POSTGRES_PRISMA_URL=postgresql://…@db:5432/northhr</code></td><td class="cp">RDS Multi-AZ · URL ประกอบจาก <code>DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD</code> ใน <code>rds-credentials</code> · <code>?connection_limit=5</code> ต่อ pod</td></tr>
+          <tr><td>schema</td><td class="cu"><code>compose run --rm api npx prisma migrate deploy</code> ก่อน up · seed ด้วย <code>npm run db:seeds</code> เมื่อ reset</td><td class="cp">Job <code>prisma migrate deploy</code> ก่อน rollout · ไม่ seed · snapshot RDS ก่อน migrate ทุกครั้ง</td></tr>
+          <tr><td>CORS</td><td class="cu"><code>CORS_ALLOWED_ORIGINS=https://uat.nthw.dev</code></td><td class="cp"><code>CORS_ALLOWED_ORIGINS=https://hr.nthw.dev</code></td></tr>
+          <tr><td>S3</td><td class="cu">bucket uat · IAM user เฉพาะ bucket</td><td class="cp">bucket prod · versioning + lifecycle · IAM user แยก</td></tr>
+          <tr><td>อีเมล / push / แผนที่</td><td class="cu">SMTP ทดสอบ · Firebase project dev · Maps key ชุด dev</td><td class="cp">SES หรือ SMTP จริง · Firebase project prod · Maps key จำกัดโดเมนและ package name</td></tr>
+          <tr><td>health endpoint</td><td class="cu"><code>deploy.sh</code> รอ <code>https://api.uat.nthw.dev/api/v1/health</code> = 200</td><td class="cp">readinessProbe ของ pod และ <code>deploy.sh</code> ใช้ endpoint เดียวกัน</td></tr>
+          <tr><td>การเข้าถึงหน้า</td><td class="cu">Cloudflare Access ให้เฉพาะอีเมลของผู้ทดสอบ</td><td class="cp">สาธารณะ + WAF + rate limit · Access เฉพาะ back-office ถ้าต้องการ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- MOBILE ---------- -->
+<section class="section deploy" id="deploy-mobile">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">hr_mobile</span>
+        <h2>แอปมือถือชี้ไปยัง API ของแต่ละ environment ตอน compile</h2>
+        <p><code>hr_mobile</code> อ่าน <code>.env</code> ผ่าน <code>--dart-define-from-file=.env</code> จึงต้อง build แยกชุดต่อ environment · ไม่ต้อง deploy บน AWS แต่ต้องปล่อยผ่านช่องทางแจกแอป</p>
+      </div>
+    </div>
+    <div class="grid3 two">
+      <div class="card uat">
+        <h3><span class="ic">📱</span>UAT build → ผู้ทดสอบ</h3>
+        <ul class="svc">
+          <li><span class="sic">🔧</span><div><b>Config</b><span><code>make set-uat</code> คัดลอก <code>.env.uat.bk</code> → <code>.env</code> โดย <code>BASE_URL=https://api.uat.nthw.dev</code></span></div></li>
+          <li><span class="sic">🤖</span><div><b>Android</b><span><code>./deploy.sh android</code> build APK release แล้วส่ง Firebase App Distribution กลุ่ม <code>developers</code> ผู้ทดสอบกดติดตั้งจากอีเมล/แอป App Tester</span></div></li>
+          <li><span class="sic">🍎</span><div><b>iOS</b><span>build IPA release อัปโหลด TestFlight ให้ผู้ทดสอบติดตั้ง</span></div></li>
+          <li><span class="sic">⚙️</span><div><b>GitHub Actions</b><span>tag <code>mobile-v*</code> บน branch <code>uat</code> → runner macOS build ด้วย FVM → อัปโหลด App Distribution อัตโนมัติ (secret: Firebase service account)</span></div></li>
+        </ul>
+      </div>
+      <div class="card prod">
+        <h3><span class="ic">🏪</span>PROD release → store</h3>
+        <ul class="svc">
+          <li><span class="sic">🔧</span><div><b>Config</b><span><code>.env.prod</code> โดย <code>BASE_URL=https://api.hr.nthw.dev</code> · Firebase project prod · Maps key prod จำกัด package/bundle id</span></div></li>
+          <li><span class="sic">🤖</span><div><b>Google Play</b><span>AAB release → internal testing → production track แบบ staged rollout 10% → 100%</span></div></li>
+          <li><span class="sic">🍎</span><div><b>App Store</b><span>TestFlight → App Review → phased release · เวอร์ชันจัดการด้วย <code>version.sh</code></span></div></li>
+          <li><span class="sic">🔁</span><div><b>ความเข้ากันได้</b><span>API ต้อง backward-compatible อย่างน้อย 2 เวอร์ชันของแอป เพราะพนักงานอัปเดตไม่พร้อมกัน</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- OPS ---------- -->
+<section class="section deploy" id="deploy-ops">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Operations</span>
+        <h2>งานประจำและคำสั่งที่ใช้</h2>
+        <p>รันจาก macOS ของผู้ดูแลหลัง <code>aws sso login</code> · ทุกคำสั่งเข้าเครื่องผ่าน SSM</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>งาน</th><th class="cu">UAT · docker compose</th><th class="cp">PROD · k3s + RDS</th></tr></thead>
+        <tbody>
+          <tr><td>ขึ้นเวอร์ชันใหม่</td><td class="cu">GitHub Actions อัตโนมัติ · มือ: <code>APP_TAG=x ./deploy.sh</code> (&lt; 1 นาที)</td><td class="cp">GitHub Actions หลังอนุมัติ · มือ: <code>APP_TAG=x ./deploy.sh</code> (Job migrate + rolling update 1–2 นาที)</td></tr>
+          <tr><td>rollback</td><td class="cu">rerun job ด้วย tag ก่อนหน้า</td><td class="cp"><code>kubectl rollout undo deploy/api deploy/bo</code> · DB จาก snapshot</td></tr>
+          <tr><td>ตรวจสุขภาพ</td><td class="cu"><code>./verify.sh</code></td><td class="cp"><code>./verify.sh</code> · <code>kubectl get hpa,pods -o wide</code></td></tr>
+          <tr><td>ดู log</td><td class="cu"><code>./logs.sh api 200</code> · <code>./logs.sh bo</code></td><td class="cp"><code>kubectl logs deploy/api --tail=200</code> · <code>journalctl -u k3s</code> ผ่าน SSM</td></tr>
+          <tr><td>ต่อฐานข้อมูล</td><td class="cu"><code>./connect_db.sh</code> → localhost:15432</td><td class="cp"><code>./connect_rds.sh</code> → localhost:15432 (ผ่าน SSM ของ server)</td></tr>
+          <tr><td>backup</td><td class="cu"><code>pg_dump</code> ผ่าน tunnel ก่อน destroy / reset</td><td class="cp">RDS automated backup รายวัน + PITR · snapshot ก่อน migrate · EBS snapshot ของ server</td></tr>
+          <tr><td>reset ข้อมูล</td><td class="cu"><code>./reset_db.sh</code> แล้ว migrate + seed ใหม่</td><td class="cp">ไม่ทำ</td></tr>
+          <tr><td>ขยาย</td><td class="cu"><code>INSTANCE_TYPE=t4g.medium ./create_host.sh</code> (แนวตั้ง)</td><td class="cp">HPA อัตโนมัติ · <code>./add_node.sh N</code> · เปลี่ยน <code>DB_CLASS</code> (modify RDS)</td></tr>
+          <tr><td>เข้าเครื่อง</td><td class="cu"><code>./shell.sh</code> (SSM session)</td><td class="cp"><code>aws ssm start-session --target &lt;id&gt;</code> · kubectl จาก macOS ผ่าน EIP:6443</td></tr>
+          <tr><td>ประหยัด</td><td class="cu"><code>./stop.sh</code> นอกเวลางาน (เหลือ ~$0.1/วัน)</td><td class="cp">เปิดตลอด · ลด agent เหลือ 1 นอกเวลา peak ได้ถ้ายอมรับ</td></tr>
+          <tr><td>ลบทิ้ง</td><td class="cu"><code>./destroy.sh --yes</code> (~2 นาที)</td><td class="cp"><code>./destroy.sh --yes</code> หลังปิด deletion protection (~5 นาที)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- COST ---------- -->
+<section class="section deploy" id="deploy-cost">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">ค่าใช้จ่าย</span>
+        <h2>ประมาณการต่อวัน (on-demand · ap-southeast-1)</h2>
+        <p>ไม่รวม data transfer, S3 และค่า Firebase/Maps ซึ่งขึ้นกับการใช้งาน · Cloudflare DNS + Tunnel + WAF พื้นฐานอยู่บน Free plan · Docker Hub และ GitHub Actions อยู่ในโควตาฟรีสำหรับ repo ขนาดนี้</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>รายการ</th><th>หน่วย</th><th class="num cu">UAT</th><th class="num cp">PROD</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td>EC2</td><td class="muted">t4g.small $0.0212 · t4g.medium $0.0424 /ชม.</td><td class="num cu">$0.51</td><td class="num cp">$2.04</td><td>UAT 1× small · PROD 1× medium + 2× small</td></tr>
+          <tr><td>EBS gp3</td><td class="muted">$0.096/GB-เดือน</td><td class="num cu">$0.09</td><td class="num cp">$0.19</td><td>UAT 30 GB · PROD 20 GB × 3</td></tr>
+          <tr><td>Public IPv4 / EIP</td><td class="muted">$0.005/ชม. ต่อ IP</td><td class="num cu">$0.12</td><td class="num cp">$0.36</td><td>PROD 3 เครื่อง</td></tr>
+          <tr><td>RDS db.t4g.small Multi-AZ</td><td class="muted">$0.038/ชม. × 2 AZ</td><td class="num cu">–</td><td class="num cp">$1.82</td><td>UAT ใช้ postgres container</td></tr>
+          <tr><td>RDS storage + backup</td><td class="muted">gp3 $0.138/GB-เดือน · 50 GB</td><td class="num cu">–</td><td class="num cp">$0.23</td><td>backup เท่าขนาด DB ฟรี</td></tr>
+          <tr><td>CloudWatch alarm</td><td class="muted">$0.10/alarm-เดือน</td><td class="num cu">–</td><td class="num cp">$0.02</td><td>5 alarm</td></tr>
+          <tr><td>IAM · SSM · Cloudflare · Docker Hub</td><td class="muted">ฟรี</td><td class="num cu">$0</td><td class="num cp">$0</td><td></td></tr>
+          <tr class="total"><td>รวมต่อวัน</td><td></td><td class="num cu">≈ $0.7</td><td class="num cp">≈ $4.7</td><td>PROD ถูกกว่า EKS (≈ $8.4/วัน) แม้มี 3 node + Multi-AZ</td></tr>
+          <tr class="total"><td>รวมต่อเดือน (30 วัน)</td><td></td><td class="num cu">≈ $22</td><td class="num cp">≈ $140</td><td>UAT stop นอกเวลางานเหลือ ≈ $3–5/เดือน</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fine">ถ้าโหลดจริงต่ำกว่าคาด ลด PROD ได้เป็น server t4g.small + agent 1 เครื่อง + RDS Single-AZ ≈ $1.9/วัน · ถ้าสูงกว่าคาด ขยาย <code>DB_CLASS</code> เป็น db.t4g.medium (+$1.8/วัน) ก่อนเพิ่ม node เพราะ DB มักเป็นคอขวดก่อน · Reserved / Savings Plan 1 ปีลดค่า EC2 และ RDS ราว 30–40%</p>
+  </div>
+</section>
+
+<!-- ---------- COMPARE ---------- -->
+<section class="section deploy" id="deploy-compare">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">เทียบ</span>
+        <h2>LOCAL vs UAT vs PROD</h2>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th></th><th class="cl">LOCAL (dev)</th><th class="cu">UAT</th><th class="cp">PROD</th></tr></thead>
+        <tbody>
+          <tr><td>ผู้ใช้</td><td class="cl">นักพัฒนา</td><td class="cu">ผู้ทดสอบคนเดียว</td><td class="cp">พนักงาน 3,000–4,000 คน</td></tr>
+          <tr><td>Compute</td><td class="cl">macOS · <code>npm run dev</code> · <code>make dev</code></td><td class="cu">EC2 t4g.small × 1 · docker compose</td><td class="cp">EC2 × 3 (2 AZ) · k3s · HPA</td></tr>
+          <tr><td>ขาเข้า</td><td class="cl">localhost:8000 / :8080</td><td class="cu">Cloudflare Tunnel · cloudflared ×1</td><td class="cp">Cloudflare Tunnel + WAF · cloudflared ×3</td></tr>
+          <tr><td>port ที่เปิดใน SG</td><td class="cl">–</td><td class="cu">ไม่มี</td><td class="cp">6443 จาก IP ผู้ดูแลเท่านั้น</td></tr>
+          <tr><td>Database</td><td class="cl">Postgres 16 ใน Docker Desktop</td><td class="cu">postgres:16 container · EBS</td><td class="cp">RDS PostgreSQL Multi-AZ · backup อัตโนมัติ</td></tr>
+          <tr><td>Config / Secrets</td><td class="cl"><code>.env</code> จาก <code>set:local</code></td><td class="cu"><code>.env</code> + <code>api.env</code> บนเครื่อง generate ตอน deploy</td><td class="cp">k8s Secret → Secrets Manager</td></tr>
+          <tr><td>Deploy</td><td class="cl">hot reload</td><td class="cu">Actions → Docker Hub → <code>compose up -d</code> อัตโนมัติ</td><td class="cp">Actions → Docker Hub → อนุมัติ → <code>kubectl set image</code> (migrate Job + rolling)</td></tr>
+          <tr><td>hr_mobile</td><td class="cl"><code>make dev</code> · BASE_URL = LAN IP</td><td class="cu">APK/IPA ผ่าน Firebase App Distribution / TestFlight</td><td class="cp">Google Play / App Store</td></tr>
+          <tr><td>HA</td><td class="cl">–</td><td class="cu">ไม่มี (ตั้งใจ)</td><td class="cp">pod หลาย node · RDS Multi-AZ · control plane เครื่องเดียว</td></tr>
+          <tr><td>Monitoring</td><td class="cl">console · Alice</td><td class="cu"><code>./logs.sh</code> · <code>./verify.sh</code></td><td class="cp">kubectl · CloudWatch RDS alarm · Cloudflare analytics</td></tr>
+          <tr><td>ค่าใช้จ่าย</td><td class="cl">$0</td><td class="cu">≈ $0.7/วัน (stop ≈ $0.1)</td><td class="cp">≈ $4.7/วัน</td></tr>
+          <tr><td>ทางย้าย</td><td class="cl">push <code>main</code> → UAT</td><td class="cu">image ที่ผ่าน UAT ยกไป PROD โดยไม่แก้โค้ด (env <code>DB_*</code> ชื่อเดียวกัน)</td><td class="cp">manifest ยกไป Amazon EKS ได้ทั้งไฟล์เมื่อต้องการ SLA ของ control plane</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    NorthHR — hr_mobile (Flutter) · hr-api (NestJS + Prisma + PostgreSQL) · hr-bo (Next.js) · Deploy UAT (EC2 + docker compose + Cloudflare Tunnel) · PROD (EC2 + k3s + Cloudflare Tunnel + RDS) · CI/CD GitHub Actions → Docker Hub · เอกสารนำเสนอโครงการ
+  </div>
+</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="x" id="lbClose" aria-label="ปิด">✕</button>
+  <button class="p" id="lbPrev" aria-label="ก่อนหน้า">‹</button>
+  <img id="lbImg" src="" alt="">
+  <button class="nx" id="lbNext" aria-label="ถัดไป">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+(function(){
+  // theme toggle
+  var root=document.documentElement,btn=document.getElementById('themeBtn');
+  try{var t=localStorage.getItem('nh-theme');if(t)root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=dark?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('nh-theme',next);}catch(e){}
+  });
+
+  // lightbox
+  var lb=document.getElementById('lb'),img=document.getElementById('lbImg'),cap=document.getElementById('lbCap');
+  var items=[],idx=0;
+  document.querySelectorAll('.shots').forEach(function(g){
+    var group=g.getAttribute('data-group');
+    g.querySelectorAll('.shot:not(.tall)').forEach(function(f){
+      var i=f.querySelector('img'),c=f.querySelector('figcaption');
+      var item={src:i.getAttribute('src'),cap:c.textContent.replace(/\s+/g,' ').trim(),group:group};
+      items.push(item);
+      f.addEventListener('click',function(){open(items.indexOf(item));});
+    });
+  });
+  function show(){var it=items[idx];img.src=it.src;cap.textContent=it.cap;}
+  function open(i){idx=i;show();lb.classList.add('open');document.body.style.overflow='hidden';}
+  function close(){lb.classList.remove('open');document.body.style.overflow='';}
+  function step(d){var g=items[idx].group;var n=idx;do{n=(n+d+items.length)%items.length;}while(items[n].group!==g);idx=n;show();}
+  document.getElementById('lbClose').onclick=close;
+  document.getElementById('lbPrev').onclick=function(e){e.stopPropagation();step(-1);};
+  document.getElementById('lbNext').onclick=function(e){e.stopPropagation();step(1);};
+  lb.addEventListener('click',function(e){if(e.target===lb)close();});
+  document.addEventListener('keydown',function(e){
+    if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);
+  });
+})();
+</script>
+</body>
+</html>
