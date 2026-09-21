@@ -108,9 +108,9 @@ export const experiences: Experience[] = [
     ],
     highlights: [
       "**TX-Service Laos** — payment gateway for the Lao market with QR deposits and bank withdrawals across **35+ RESTful endpoints** in Go (Gin, PostgreSQL, Redis), with RFC 9421 (Ed25519) webhook verification, SQS FIFO event processing, and a Next.js admin dashboard.",
-      "**Smart Hire AI** — hiring platform where candidates answer interview questions and the ChatGPT API analyzes their responses; built in Next.js and Tailwind CSS, running server-side logic in the app itself rather than a separate API service for faster delivery.",
+      "**Smart Hire AI** — hiring platform where candidates answer interview questions and the ChatGPT API analyzes their responses; built in Next.js (MongoDB) and Tailwind CSS, running server-side logic in the app itself rather than a separate API service for faster delivery.",
       "**North HR** — employee management across a Flutter mobile app, a Next.js back-office, and a NestJS API (Prisma, PostgreSQL) exposing **50+ endpoints**: location-based check-in/out via Google Maps API, push notifications through Firebase Cloud Messaging, and S3 file storage with e-signed documents viewable by link.",
-      "**GiftMe** — donation platform for streamers with SCB bank QR payment integration, built in Next.js with a NestJS backend exposing **40+ endpoints**.",
+      "**GiftMe** — donation platform for streamers with SCB bank QR payment integration, built in Next.js with a NestJS backend (MongoDB) exposing **40+ endpoints**.",
       "**5v5 Laos** — landing page for a Lao e-commerce marketplace, built in Next.js and Tailwind CSS, localized in Thai, Lao, and English, and responsive across every device.",
       "Deployed **all self-hosted apps** with Docker behind Nginx Proxy Manager, delivered by GitHub Actions to AWS, DigitalOcean, or Firebase App Distribution.",
     ],
@@ -120,6 +120,7 @@ export const experiences: Experience[] = [
       "Next.js",
       "Flutter",
       "PostgreSQL",
+      "MongoDB",
       "AWS SQS",
       "Docker",
       "GitHub Actions",
@@ -171,10 +172,10 @@ export const experiences: Experience[] = [
     context:
       "**Thinker Loan** — home and personal loan platform for a **Thai commercial bank**.",
     highlights: [
-      "Built RESTful microservices in Go (net/http), exposed through GraphQL with gRPC.",
+      "Built RESTful microservices in Go (net/http) backed by MongoDB, exposed through GraphQL with gRPC.",
       "Built a **real-time chat system** in the Next.js web app over WebSocket.",
     ],
-    stack: ["Go", "GraphQL", "gRPC", "Next.js", "WebSocket"],
+    stack: ["Go", "GraphQL", "gRPC", "MongoDB", "Next.js", "WebSocket"],
   },
   {
     role: "Full-Stack Developer",
