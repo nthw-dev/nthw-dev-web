@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GiftMe Overview</title>
+<meta name="description" content="เอกสารนำเสนอระบบ GiftMe: giftme-api (NestJS) และ giftme-web (Next.js) — แพลตฟอร์มรับโดเนทสำหรับสตรีมเมอร์ไทย เชื่อม AQ1 Payment Gateway และ OBS overlay แบบเรียลไทม์">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5fb;--surface:#ffffff;--surface-2:#efecf7;--text:#1c1730;--muted:#5f5878;--line:#e2ddee;
+  --brand:#4c1d95;--brand-soft:#ede6fc;--accent:#7c3aed;
+  --gw:#0ea5a4;--gw-soft:#dff6f5;--api:#d946a0;--api-soft:#fce4f2;--web:#7c3aed;--web-soft:#ede6fc;
+  --ov:#e0761b;--ov-soft:#fdeedd;
+  --deploy:#0f766e;--deploy-soft:#d9f2ee;--local:#2563eb;--local-soft:#dbe7ff;--cf:#e7862b;--cf-soft:#fdeedd;
+  --prod:#b91c1c;--prod-soft:#fde4e4;--line-2:#cdc6de;--ok:#16a34a;
+  --shadow:0 1px 2px rgba(28,23,48,.06),0 8px 24px rgba(28,23,48,.07);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#120d1e;--surface:#1b1430;--surface-2:#241b3f;--text:#ece8f7;--muted:#a49bc0;--line:#2f2450;
+    --brand:#c4b5fd;--brand-soft:#2a2050;--accent:#a78bfa;
+    --gw:#2dd4bf;--gw-soft:#123332;--api:#f472b6;--api-soft:#3d1830;--web:#b28bff;--web-soft:#2a1f45;
+    --ov:#f0a05a;--ov-soft:#3d2a16;
+    --deploy:#5eead4;--deploy-soft:#113a36;--local:#93c5fd;--local-soft:#172a4d;--cf:#f0a05a;--cf-soft:#3d2a16;
+    --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3f3263;--ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#120d1e;--surface:#1b1430;--surface-2:#241b3f;--text:#ece8f7;--muted:#a49bc0;--line:#2f2450;
+  --brand:#c4b5fd;--brand-soft:#2a2050;--accent:#a78bfa;
+  --gw:#2dd4bf;--gw-soft:#123332;--api:#f472b6;--api-soft:#3d1830;--web:#b28bff;--web-soft:#2a1f45;
+  --ov:#f0a05a;--ov-soft:#3d2a16;
+  --deploy:#5eead4;--deploy-soft:#113a36;--local:#93c5fd;--local-soft:#172a4d;--cf:#f0a05a;--cf-soft:#3d2a16;
+  --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3f3263;--ok:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:8px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);margin-right:auto;white-space:nowrap}
+.logo span{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;font-size:13px;letter-spacing:.5px}
+.nav a.link{color:var(--muted);font-weight:500;padding:6px 10px;border-radius:8px;font-size:.95rem;white-space:nowrap}
+.nav a.link:hover{background:var(--surface-2);color:var(--text)}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:16px;flex:none}
+
+/* hero */
+.hero{padding:64px 0 40px}
+.hero h1{font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{font-size:1.15rem;color:var(--muted);max-width:800px;margin:0 0 28px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:.92rem;color:var(--text);box-shadow:var(--shadow)}
+.pill i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pill.a i{background:var(--api)}.pill.w i{background:var(--web)}.pill.g i{background:var(--gw)}.pill.o i{background:var(--ov)}.pill.d i{background:var(--deploy)}
+
+/* architecture */
+.arch{margin:8px 0 56px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);overflow-x:auto}
+.arch h2{margin:0 0 6px;font-size:1.25rem}
+.arch p{margin:0 0 18px;color:var(--muted)}
+.arch svg{width:100%;min-width:860px;height:auto;display:block}
+.arch text{font-family:"Noto Sans Thai",system-ui,sans-serif}
+
+/* section */
+.section{padding:48px 0;border-top:1px solid var(--line)}
+.section-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;margin-bottom:28px}
+.section-head .tag{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:6px;margin-bottom:8px}
+.section-head h2{margin:0;font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.01em}
+.section-head p{margin:4px 0 0;color:var(--muted);max-width:840px}
+.api .tag{background:var(--api-soft);color:var(--api)}
+.web .tag{background:var(--web-soft);color:var(--web)}
+.gw .tag{background:var(--gw-soft);color:var(--gw)}
+.ov .tag{background:var(--ov-soft);color:var(--ov)}
+
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:36px}
+.grid3.two{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.card h3 .ic{width:28px;height:28px;border-radius:8px;display:inline-grid;place-items:center;font-size:14px;flex:none}
+.api .card h3 .ic{background:var(--api-soft);color:var(--api)}
+.web .card h3 .ic{background:var(--web-soft);color:var(--web)}
+.gw .card h3 .ic{background:var(--gw-soft);color:var(--gw)}
+.ov .card h3 .ic{background:var(--ov-soft);color:var(--ov)}
+.tech{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tech li{background:var(--surface-2);border:1px solid var(--line);padding:5px 11px;border-radius:8px;font-size:.88rem;font-weight:500}
+.tech li b{font-weight:700}
+.svc{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.svc li{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.svc .sic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:17px}
+.svc b{display:block;font-size:.95rem}
+.svc span{color:var(--muted);font-size:.88rem;line-height:1.5}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.feat li{position:relative;padding-left:24px;font-size:.95rem}
+.feat li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px}
+.api .feat li::before{background:var(--api)}
+.web .feat li::before{background:var(--web)}
+.gw .feat li::before{background:var(--gw)}
+.ov .feat li::before{background:var(--ov)}
+.deploy .feat li::before{background:var(--brand)}
+
+/* gallery */
+.gal-head{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.gal-head h3{margin:0;font-size:1.2rem}
+.gal-head span{color:var(--muted);font-size:.9rem}
+.shots{display:grid;gap:16px;margin-bottom:32px}
+.shots.screens{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:zoom-in;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+.shot:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(28,23,48,.18)}
+.shot .img{background:var(--surface-2);position:relative;overflow:hidden}
+.screens .shot .img{aspect-ratio:1645/1323}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot figcaption{padding:10px 12px;font-size:.85rem;line-height:1.4}
+.shot figcaption small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+.shot .n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:6px;font-size:.72rem;font-weight:700;margin-right:6px;vertical-align:middle}
+.web .shot .n{background:var(--web-soft);color:var(--web)}
+.api .shot .n{background:var(--api-soft);color:var(--api)}
+.ov .shot .n{background:var(--ov-soft);color:var(--ov)}
+.shot.tall .img{aspect-ratio:auto;max-height:720px;overflow:auto}
+.shot.tall img{height:auto;object-fit:contain}
+.shot.tall{cursor:default}
+.shot.tall:hover{transform:none}
+.api .shots{grid-template-columns:1fr}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(10,6,20,.93);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
+.lb.open{display:flex}
+.lb img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lb .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;color:#ece8f7;font-size:.95rem;padding:0 60px}
+.lb button{position:absolute;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:20px;display:grid;place-items:center}
+.lb button:hover{background:rgba(255,255,255,.22)}
+.lb .x{top:18px;right:18px}.lb .p{left:18px;top:50%;transform:translateY(-50%)}.lb .nx{right:18px;top:50%;transform:translateY(-50%)}
+
+/* deploy */
+.deploy .section-head .tag{background:var(--brand-soft);color:var(--brand)}
+.deploy .card h3 .ic{background:var(--brand-soft);color:var(--brand)}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 24px}
+.subnav a{font-size:.85rem;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.subnav a:hover{color:var(--text);border-color:var(--line-2)}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.steps li{font-size:.95rem}
+.steps li small{color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:8px 0 0;max-width:900px}
+p code,li code,td code{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+
+/* diagram blocks */
+.darch{margin:0 0 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);overflow-x:auto}
+.ov .darch{border-color:var(--ov)} .gw .darch{border-color:var(--gw)} .deploy .darch{border-color:var(--brand)}
+.darch h3{margin:0 0 4px;font-size:1.15rem}
+.ov .darch h3{color:var(--ov)} .gw .darch h3{color:var(--gw)} .deploy .darch h3{color:var(--brand)}
+.darch p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
+.darch svg{width:100%;min-width:860px;height:auto;display:block;font-family:"Noto Sans Thai",system-ui,sans-serif}
+.darch .box{fill:var(--surface);stroke:var(--line-2);stroke-width:1.5}
+.darch .box.w{fill:var(--web-soft);stroke:var(--web)}
+.darch .box.a{fill:var(--api-soft);stroke:var(--api)}
+.darch .box.g{fill:var(--gw-soft);stroke:var(--gw)}
+.darch .box.o{fill:var(--ov-soft);stroke:var(--ov)}
+.darch .box.d{fill:var(--surface-2);stroke:var(--line-2)}
+.darch .lbl{fill:var(--text);font-size:13px;font-weight:700}
+.darch .sub{fill:var(--muted);font-size:10.5px}
+.darch .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+.darch .edge.in{stroke:var(--gw)}
+.darch .edge.out{stroke:var(--ov);stroke-dasharray:5 3}
+.darch .edge.ext{stroke:var(--muted);stroke-dasharray:5 4}
+.darch .elbl{fill:var(--muted);font-size:10.5px}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:.85rem;color:var(--muted)}
+.legend-row span::before{content:"";display:inline-block;width:22px;height:0;border-top:2px solid var(--muted);margin-right:6px;vertical-align:middle}
+.legend-row .in::before{border-color:var(--gw)}
+.legend-row .out::before{border-color:var(--ov);border-top-style:dashed}
+.legend-row .ext::before{border-top-style:dashed}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);margin-bottom:24px}
+.cmp{width:100%;border-collapse:collapse;font-size:.9rem}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{color:var(--muted);font-weight:600;font-size:.8rem;background:var(--surface-2);white-space:nowrap}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.cmp .muted{color:var(--muted);font-weight:400;font-size:.85rem}
+.cmp td.mono{font-family:"JetBrains Mono",monospace;font-size:.82rem}
+.cmp .ca{border-left:3px solid var(--api)} .cmp .cw{border-left:3px solid var(--web)}
+.cmp .cg{border-left:3px solid var(--gw)} .cmp .co{border-left:3px solid var(--ov)}
+.role{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.role.adm{background:var(--prod-soft);color:var(--prod);border-color:var(--prod)}
+.role.pub{background:var(--gw-soft);color:var(--gw);border-color:var(--gw)}
+
+.note{background:var(--brand-soft);border:1px solid var(--brand);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px}
+.note b{display:block;margin-bottom:8px;color:var(--brand)}
+.note ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.95rem}
+.ov .note{background:var(--ov-soft);border-color:var(--ov)} .ov .note b{color:var(--ov)}
+.gw .note{background:var(--gw-soft);border-color:var(--gw)} .gw .note b{color:var(--gw)}
+.note.warn{background:var(--cf-soft);border-color:var(--cf)} .note.warn b{color:var(--cf)}
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.85rem;line-height:1.55;margin:0}
+pre code{font-size:1em}
+.pre-cap{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 36px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:1.5rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.85rem}
+@media (max-width:640px){.hero{padding:40px 0 28px}.section{padding:36px 0}.shots.screens{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top"><span>GM</span>GiftMe</a>
+    <div class="nav-links">
+      <a class="link" href="#architecture">สถาปัตยกรรม</a>
+      <a class="link" href="#api">API (NestJS)</a>
+      <a class="link" href="#web">Web</a>
+      <a class="link" href="#overlay">Overlay / OBS</a>
+      <a class="link" href="#gateway">AQ1 Gateway</a>
+      <a class="link" href="#deploy">Deploy / CI-CD</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="สลับธีม" aria-label="สลับธีม">◐</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1>GiftMe <em>แพลตฟอร์มรับโดเนทสำหรับสตรีมเมอร์</em></h1>
+    <p class="lead">ระบบรับเงินสนับสนุนสำหรับสตรีมเมอร์ไทย ผู้ชมเปิดหน้าโดเนทสาธารณะของสตรีมเมอร์ จ่ายเงินด้วย <b>PromptPay QR</b> ผ่าน <b>AQ1 Payment Gateway</b> เมื่อชำระสำเร็จ ระบบจะยิงการแจ้งเตือนเข้า <b>OBS browser source</b> แบบเรียลไทม์ทันที พร้อมระบบยืนยันตัวตน (KYC) บัญชีธนาคาร สรุปยอดรายเดือน และแบ็กออฟฟิศสำหรับผู้ดูแล ประกอบด้วย 2 โปรเจกต์: API ภาษา TypeScript บน NestJS และเว็บ Next.js</p>
+    <div class="pills">
+      <span class="pill a"><i></i>giftme-api · NestJS 10 + Prisma + PostgreSQL</span>
+      <span class="pill w"><i></i>giftme-web · Next.js 14 App Router + NextUI</span>
+      <a class="pill o" href="#overlay"><i></i>Overlay · Socket.IO 4 widget</a>
+      <a class="pill g" href="#gateway"><i></i>AQ1 Payment Gateway · PromptPay</a>
+      <a class="pill d" href="#deploy"><i></i>Deploy · Docker · GitHub Actions</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>2</b><span>โปรเจกต์ (NestJS API · Next.js Web)</span></div>
+    <div class="stat"><b>79</b><span>REST endpoints (<code>/api/v1/*</code>)</span></div>
+    <div class="stat"><b>15</b><span>โมเดลข้อมูล (Prisma + PostgreSQL)</span></div>
+    <div class="stat"><b>4</b><span>Overlay widget + Socket.IO gateway</span></div>
+    <div class="stat"><b>3</b><span>บทบาท: MEMBER · ADMIN · SUPER_ADMIN</span></div>
+    <div class="stat"><b>11</b><span>เมธอดเชื่อม AQ1 Gateway</span></div>
+  </div>
+
+  <section class="arch" id="architecture">
+    <h2>สถาปัตยกรรมระบบ</h2>
+    <p>เว็บไม่เรียก API ตรงจากเบราว์เซอร์ แต่วิ่งผ่านสายบังคับ 4 ชั้น: <b>Server Action → Service singleton → BaseService.handleRequest → axios</b> ทำให้ token และ <code>BACKEND_API_URL</code> อยู่ฝั่งเซิร์ฟเวอร์เสมอ · ฝั่ง API มี REST สำหรับแดชบอร์ดและ Socket.IO อีก 4 เส้นทางสำหรับ overlay ที่ยืนยันตัวตนด้วย token ไม่ใช่ JWT เพราะ OBS ส่ง header ไม่ได้</p>
+    <svg viewBox="0 0 1100 520" role="img" aria-label="แผนภาพสถาปัตยกรรม GiftMe">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+        <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--gw)"/></marker>
+        <marker id="aro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ov)"/></marker>
+      </defs>
+
+      <rect x="40" y="26" width="300" height="96" rx="14" fill="var(--web-soft)" stroke="var(--web)" stroke-width="2"/>
+      <text x="190" y="58" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">ผู้ชม / ผู้โดเนท</text>
+      <text x="190" y="80" text-anchor="middle" font-size="12.5" fill="var(--muted)">หน้าโดเนทสาธารณะ <tspan font-family="JetBrains Mono, monospace">/[username]</tspan></text>
+      <text x="190" y="100" text-anchor="middle" font-size="12.5" fill="var(--muted)">สแกน PromptPay QR · ไม่ต้องสมัครสมาชิก</text>
+
+      <rect x="760" y="26" width="300" height="96" rx="14" fill="var(--ov-soft)" stroke="var(--ov)" stroke-width="2"/>
+      <text x="910" y="58" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">OBS Browser Source</text>
+      <text x="910" y="80" text-anchor="middle" font-size="12.5" fill="var(--muted)"><tspan font-family="JetBrains Mono, monospace">/overlay/[token]/alert</tspan> · goal</text>
+      <text x="910" y="100" text-anchor="middle" font-size="12.5" fill="var(--muted)">latest · top-donator — บนโปรแกรมสตรีม</text>
+
+      <rect x="40" y="168" width="300" height="118" rx="14" fill="var(--web-soft)" stroke="var(--web)" stroke-width="2"/>
+      <text x="190" y="198" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">giftme-web</text>
+      <text x="190" y="220" text-anchor="middle" font-size="12.5" fill="var(--muted)">Next.js 14 App Router · React 18 · NextUI</text>
+      <text x="190" y="240" text-anchor="middle" font-size="12.5" fill="var(--muted)">Server Actions → Service → BaseService</text>
+      <text x="190" y="260" text-anchor="middle" font-size="12.5" fill="var(--muted)">แดชบอร์ดสตรีมเมอร์ · แบ็กออฟฟิศ · overlay</text>
+      <text x="190" y="278" text-anchor="middle" font-size="11" fill="var(--muted)">session เก็บใน cookie httpOnly</text>
+
+      <rect x="400" y="150" width="300" height="212" rx="14" fill="var(--api-soft)" stroke="var(--api)" stroke-width="2"/>
+      <text x="550" y="180" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">giftme-api</text>
+      <text x="550" y="200" text-anchor="middle" font-size="12" fill="var(--muted)">NestJS 10 · Prisma 5 · Passport JWT · Swagger</text>
+      <rect x="420" y="214" width="260" height="40" rx="9" fill="var(--surface)" stroke="var(--api)" stroke-width="1.2"/>
+      <text x="550" y="232" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">REST /api/v1/* — 79 endpoints</text>
+      <text x="550" y="247" text-anchor="middle" font-size="10" fill="var(--muted)">profile/* (ตนเอง) · bo/* (ผู้ดูแล) · public</text>
+      <rect x="420" y="262" width="260" height="40" rx="9" fill="var(--surface)" stroke="var(--ov)" stroke-width="1.2"/>
+      <text x="550" y="280" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">Socket.IO — 4 overlay gateway</text>
+      <text x="550" y="295" text-anchor="middle" font-size="10" fill="var(--muted)">/alert-gw · /top-donator-gw · /donate-latest-gw …</text>
+      <rect x="420" y="310" width="260" height="36" rx="9" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.2"/>
+      <text x="550" y="326" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">Webhook + Cron รายเดือน</text>
+      <text x="550" y="340" text-anchor="middle" font-size="10" fill="var(--muted)">สร้าง Donation · ออกใบเสร็จ · ส่งอีเมล</text>
+
+      <rect x="760" y="190" width="300" height="96" rx="14" fill="var(--gw-soft)" stroke="var(--gw)" stroke-width="2"/>
+      <text x="910" y="222" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">AQ1 Payment Gateway</text>
+      <text x="910" y="244" text-anchor="middle" font-size="12.5" fill="var(--muted)">ผู้ให้บริการรับ‑จ่ายเงินภายนอก (ไทย)</text>
+      <text x="910" y="264" text-anchor="middle" font-size="12.5" fill="var(--muted)">Deposit QR · Withdraw · Settlement · Webhook</text>
+
+      <rect x="200" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="295" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">PostgreSQL 16</text>
+      <text x="295" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">Prisma · 15 โมเดล</text>
+
+      <rect x="410" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="505" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">AWS S3</text>
+      <text x="505" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">รูปโปรไฟล์ · เอกสาร KYC</text>
+
+      <rect x="620" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="715" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">SMTP / Nodemailer</text>
+      <text x="715" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">อีเมล 8 แบบ</text>
+
+      <rect x="830" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="925" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">Streamlabs OAuth</text>
+      <text x="925" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">ทางเลือกในการเข้าสู่ระบบ</text>
+
+      <path class="edge" d="M190 122 L190 163" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+      <path d="M340 227 L395 227" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+      <text x="367" y="219" text-anchor="middle" font-size="10.5" fill="var(--muted)">axios + Bearer</text>
+      <path d="M700 214 L755 214" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+      <text x="727" y="206" text-anchor="middle" font-size="10.5" fill="var(--muted)">requestDeposit</text>
+      <path d="M755 262 L705 262" stroke="var(--gw)" stroke-width="1.6" fill="none" marker-end="url(#arg)"/>
+      <text x="730" y="278" text-anchor="middle" font-size="10.5" fill="var(--gw)">webhook</text>
+      <path d="M680 150 L680 74 L755 74" stroke="var(--ov)" stroke-width="1.8" stroke-dasharray="5 3" fill="none" marker-end="url(#aro)"/>
+      <text x="700" y="110" font-size="10.5" fill="var(--ov)">Socket.IO push</text>
+      <path d="M550 362 L550 390 M295 390 L925 390 M295 390 L295 405 M505 390 L505 405 M715 390 L715 405 M925 390 L925 405" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4" fill="none"/>
+    </svg>
+  </section>
+</div>
+
+<!-- ===================== API ===================== -->
+<section class="section api" id="api">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Backend · REST API + WebSocket (NestJS)</span>
+        <h2>giftme-api — แกนกลางของระบบ</h2>
+        <p>ให้บริการ REST API ภายใต้ <code>/api/v1/*</code> ด้วย URI versioning ทำหน้าที่ยืนยันตัวตน จัดการโปรไฟล์และหน้าโดเนท สั่งสร้างรายการฝากเงินไปยัง AQ1 รับ webhook ยืนยันผล บันทึกโดเนท และกระจายเหตุการณ์ออกทาง Socket.IO ให้ overlay ทั้งสี่ตัว พร้อมระบบตรวจเอกสาร KYC และงานสรุปยอดรายเดือนแบบตั้งเวลา</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Node.js</b> 20.x</li>
+          <li><b>NestJS</b> 10</li>
+          <li><b>Prisma</b> 5.18</li>
+          <li><b>PostgreSQL</b> 16</li>
+          <li><b>TypeScript</b> 5.1</li>
+          <li>Passport JWT · @nestjs/jwt</li>
+          <li>class-validator · class-transformer</li>
+          <li>Joi (ตรวจ env ตอนบูต)</li>
+          <li>Socket.IO 4.8</li>
+          <li>@nestjs/schedule (cron)</li>
+          <li>@nestjs/swagger 7</li>
+          <li>AWS SDK v3 (S3 + presigner)</li>
+          <li>Nodemailer 6</li>
+          <li>bcrypt · axios · date-fns-tz</li>
+          <li>WireMock (mock AQ1)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL 16</b><span>ฐานข้อมูลหลักผ่าน Prisma · <code>PrismaModule</code> ประกาศเป็น <code>@Global()</code> โมดูลย่อยจึงฉีด <code>PrismaService</code> ได้เลยโดยไม่ต้อง import</span></div></li>
+          <li><span class="sic">💸</span><div><b>AQ1 Payment Gateway</b><span>ผู้ให้บริการชำระเงินภายนอก 11 เมธอด (ฝาก · ถอน · settlement · ลูกค้า · รหัสธนาคาร · รายการธุรกรรม) เรียกผ่าน <code>Aq1Service</code></span></div></li>
+          <li><span class="sic">🪣</span><div><b>AWS S3</b><span>เก็บไฟล์ใต้ <code>&lt;folder&gt;/&lt;userId&gt;/&lt;originalname&gt;</code> โฟลเดอร์ <code>profile</code> · <code>static</code> · <code>overlay</code> · <code>donate-profile</code> อ่านได้สาธารณะ ส่วน <code>docFile</code> · <code>bank-account</code> เป็นไฟล์ลับ เสิร์ฟผ่าน presigned URL อายุสั้น</span></div></li>
+          <li><span class="sic">✉️</span><div><b>SMTP / Nodemailer</b><span>อีเมล 8 แบบ: ยืนยันอีเมล · รีเซ็ตรหัสผ่าน · ผลตรวจบัญชีธนาคาร · แจ้งเตือนโดเนท · แก้โปรไฟล์ · เปลี่ยนรหัสผ่าน · แจ้งเตือนการเข้าสู่ระบบ · สรุปรายได้รายเดือน</span></div></li>
+          <li><span class="sic">🎥</span><div><b>Streamlabs OAuth</b><span>ทางเลือกเข้าสู่ระบบ/สมัครสมาชิกสำหรับสตรีมเมอร์ เก็บ access/refresh token ไว้ในตาราง <code>StreamlabsAuth</code></span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>โมดูลหลัก</h3>
+        <ul class="feat">
+          <li><b>Auth</b> สมัคร/เข้าสู่ระบบด้วยรหัสผ่าน · Streamlabs OAuth · ลืมและรีเซ็ตรหัสผ่าน</li>
+          <li><b>Profile</b> ข้อมูลผู้ใช้ · เปลี่ยนรหัสผ่าน · รวมทุกเส้น self‑service ใต้ <code>profile/*</code></li>
+          <li><b>Payment</b> สร้างรายการชำระเงิน · เช็กสถานะ · รับ callback</li>
+          <li><b>Donation</b> รายการโดเนท + วิเคราะห์ราย วัน/เดือน/ปี และสรุปรวม</li>
+          <li><b>BankAccount</b> ยื่นเอกสาร KYC และสถานะการตรวจ</li>
+          <li><b>Receipt</b> ใบเสร็จ/รายการจ่ายเงินออกให้สตรีมเมอร์</li>
+          <li><b>Overlay ×4</b> alert · top-donator · donate-latest · donate-goal (controller + gateway + service)</li>
+          <li><b>Backoffice</b> <code>bo/*</code> จัดการผู้ใช้ บัญชีธนาคาร ใบเสร็จ และสถิติโดเนททั้งระบบ</li>
+          <li><b>File</b> อัปโหลดขึ้น S3 และออก presigned URL</li>
+          <li><b>Verification</b> รหัสยืนยันอีเมล / รีเซ็ตรหัสผ่าน / เบอร์โทร</li>
+          <li><b>Cronjob</b> สรุปรายได้เดือนก่อนทุกวันที่ 1 เวลา 00:00</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <h3><span class="ic">🔐</span>การยืนยันตัวตนและสิทธิ์</h3>
+        <ul class="feat">
+          <li><b>JWT</b> ออกโดย API ฝั่งเว็บเก็บไว้ใน cookie <code>session</code> แบบ httpOnly</li>
+          <li>payload ของ token ฝัง <code>role</code> พร้อมสถานะ KYC ทั้งสาม (<code>verifyEmailStatus</code> · <code>verifyPhoneStatus</code> · <code>verifyBankAccountStatus</code>) ทำให้กันสิทธิ์ได้โดยไม่ต้องยิงฐานข้อมูลซ้ำ — แต่ค่าจะเก่าจนกว่าจะออก token ใหม่</li>
+          <li><b>@UseGuards(JwtAuthGuard)</b> ติดที่ระดับคลาสบ้างระดับเมธอดบ้าง ต้องดูทั้งสองจุดก่อนสรุปว่าเส้นไหนถูกป้องกัน</li>
+          <li><b>@GetUser()</b> ดึง userId จาก token ให้เส้น <code>profile/*</code> ส่วน <code>bo/*</code> รับ userId มาทางพารามิเตอร์</li>
+          <li><b>Overlay token</b> เส้น <code>@Get(':token')</code> เปิดสาธารณะโดยตั้งใจ เพราะ OBS ส่ง header ไม่ได้</li>
+          <li>3 บทบาท: <span class="role">MEMBER</span> <span class="role adm">ADMIN</span> <span class="role adm">SUPER_ADMIN</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧱</span>ข้อตกลงร่วมของโมดูล</h3>
+        <ul class="feat">
+          <li><b>ValidationPipe</b> ระดับ global ตั้ง <code>whitelist</code> + <code>forbidNonWhitelisted</code> — ฟิลด์ที่ไม่มีใน DTO จะได้ 400 ทันที</li>
+          <li><b>ConfigModule</b> เดียวโหลด config แบบ namespace (<code>base</code> · <code>constant</code> · <code>database</code> · <code>aq1</code> · <code>aws</code> · <code>email</code> · <code>streamlabs</code>)</li>
+          <li><b>Joi schema</b> เดียวบังคับ <code>required()</code> ทุกตัวแปร ตั้งค่าไม่ครบคือสตาร์ทไม่ขึ้น</li>
+          <li><b>URI versioning</b> + global prefix <code>api</code> → ทุกเส้นเป็น <code>/api/v1/...</code></li>
+          <li><b>โครงคู่ขนาน</b> DTO ของ <code>profile-*</code> คือ <code>bo-*</code> ที่ตัด <code>userId</code> ออก · การเขียนฝั่ง self‑service เป็น <code>@Post()</code> แบบ upsert ไม่แยก create/update</li>
+          <li><b>Swagger</b> ที่ <code>/api-docs</code> และเขียนไฟล์ <code>public/swagger.json</code> ใหม่ทุกครั้งที่บูต</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🗄</span>โมเดลข้อมูล (15 ตาราง)</h3>
+        <ul class="feat">
+          <li><b>User</b> ศูนย์กลาง ผูก 1:1 กับ <code>PasswordAuth</code> · <code>StreamlabsAuth</code> · <code>BankAccount</code> · <code>DonateProfile</code> และ overlay setting ทั้งสี่</li>
+          <li><b>Payment</b> รายการชำระเงินจาก AQ1 (<code>paymentId</code> · QR · <code>expiresAt</code> · <code>webhookData</code>)</li>
+          <li><b>Donation</b> สร้างต่อเมื่อ payment สถานะ <code>COMPLETED</code> แล้วย้อน <code>donationId</code> กลับไปผูกกับ Payment</li>
+          <li><b>BankAccount</b> + <b>BankName</b> เอกสาร KYC และ <code>aq1CustomerUUID</code> สำหรับจ่ายเงินออก</li>
+          <li><b>Receipt</b> ใบเสร็จรายเดือน (ยอดรวม · ค่าธรรมเนียม 5% · ยอดสุทธิ · <code>monthYear</code>)</li>
+          <li><b>Overlay*Setting ×4</b> ค่าตั้งของ widget แต่ละตัว พร้อมคอลัมน์ <code>token</code> ที่เป็น unique</li>
+          <li><b>PaymentMethod</b> · <b>Verification</b> · <b>DonateProfile</b></li>
+          <li>สถานะชำระเงิน: <code>PENDING</code> · <code>PROCESSING</code> · <code>COMPLETED</code> · <code>FAILED</code> · <code>EXPIRED</code> · <code>CANCELLED</code> · <code>REFUNDED</code></li>
+          <li>สถานะตรวจสอบ: <code>DEFAULT</code> · <code>PENDING</code> · <code>APPROVED</code> · <code>REJECTED</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>รายการ Endpoint</h3><span>ฐาน <code>/api/v1</code> — ทั้งหมด 79 เส้น แบ่งเป็นกลุ่มสาธารณะ · <code>profile/*</code> (ของตนเอง) · <code>bo/*</code> (ผู้ดูแล)</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>กลุ่ม</th><th>Endpoint</th><th>สิทธิ์</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td>auth</td><td class="mono">POST /auth/login/password</td><td><span class="role pub">public</span></td><td>เข้าสู่ระบบด้วยอีเมล + รหัสผ่าน</td></tr>
+          <tr><td></td><td class="mono">POST /auth/register-with-password</td><td><span class="role pub">public</span></td><td>สมัครสมาชิกใหม่</td></tr>
+          <tr><td></td><td class="mono">POST /auth/streamlabs</td><td><span class="role pub">public</span></td><td>เข้าสู่ระบบ/สมัครผ่าน Streamlabs OAuth</td></tr>
+          <tr><td></td><td class="mono">POST /auth/forgot-password</td><td><span class="role pub">public</span></td><td>ขอลิงก์รีเซ็ตรหัสผ่านทางอีเมล</td></tr>
+          <tr><td></td><td class="mono">POST /auth/reset-password</td><td><span class="role pub">public</span></td><td>ตั้งรหัสผ่านใหม่ด้วยรหัสยืนยัน</td></tr>
+          <tr><td></td><td class="mono">POST /auth/mocklogin</td><td><span class="role pub">public</span></td><td>เข้าสู่ระบบแบบข้ามขั้นสำหรับทดสอบ (ปิดบน production)</td></tr>
+
+          <tr class="ca"><td>verification</td><td class="mono">POST /verification/send-email</td><td><span class="role">JWT</span></td><td>ส่งอีเมลยืนยันตัวตน</td></tr>
+          <tr><td></td><td class="mono">GET /verification/verify-code</td><td><span class="role pub">public</span></td><td>ตรวจรหัสยืนยัน</td></tr>
+          <tr><td></td><td class="mono">POST /verification/verify-email</td><td><span class="role pub">public</span></td><td>ยืนยันอีเมลด้วยรหัส</td></tr>
+
+          <tr class="ca"><td>profile</td><td class="mono">GET · PUT /profile</td><td><span class="role">JWT</span></td><td>อ่านและแก้ข้อมูลผู้ใช้ที่ล็อกอิน</td></tr>
+          <tr><td></td><td class="mono">PUT /profile/change-password</td><td><span class="role">JWT</span></td><td>เปลี่ยนรหัสผ่าน</td></tr>
+          <tr><td></td><td class="mono">GET · POST /profile/bank-accounts</td><td><span class="role">JWT</span></td><td>อ่าน และยื่น/แก้บัญชีธนาคาร (upsert)</td></tr>
+          <tr><td></td><td class="mono">GET · POST /profile/payment-methods</td><td><span class="role">JWT</span></td><td>เปิด‑ปิดช่องทางชำระเงินและยอดขั้นต่ำ</td></tr>
+          <tr><td></td><td class="mono">GET · POST /profile/donate</td><td><span class="role">JWT</span></td><td>ตั้งค่าหน้าโดเนท (ชื่อ รูป แบนเนอร์ ข้อความ)</td></tr>
+          <tr><td></td><td class="mono">GET /profile/receipts</td><td><span class="role">JWT</span></td><td>ใบเสร็จรับเงินของตนเอง</td></tr>
+
+          <tr class="ca"><td>profile-donation</td><td class="mono">GET /profile/donations/donations</td><td><span class="role">JWT</span></td><td>รายการโดเนท (ค้นหา · กรอง · แบ่งหน้า)</td></tr>
+          <tr><td></td><td class="mono">GET …/analytics/summary</td><td><span class="role">JWT</span></td><td>สรุปยอดโดเนทรวม</td></tr>
+          <tr><td></td><td class="mono">GET …/analytics/daily · monthly · yearly</td><td><span class="role">JWT</span></td><td>ข้อมูลกราฟราย วัน / เดือน / ปี</td></tr>
+
+          <tr class="co"><td>overlay setting ×4</td><td class="mono">GET · POST /profile/overlay/&lt;name&gt;-setting</td><td><span class="role">JWT</span></td><td>อ่านและบันทึกค่าตั้ง widget (สร้าง default อัตโนมัติครั้งแรก)</td></tr>
+          <tr><td></td><td class="mono">PATCH …/reset-token</td><td><span class="role">JWT</span></td><td>หมุน token ใหม่เมื่อ URL overlay รั่ว</td></tr>
+          <tr><td></td><td class="mono">GET …/&lt;name&gt;-setting/{token}</td><td><span class="role pub">token</span></td><td>ให้ OBS อ่านค่าตั้งโดยไม่ต้องมี JWT</td></tr>
+          <tr><td></td><td class="mono">GET …/top-donations/{token}</td><td><span class="role pub">token</span></td><td>3 อันดับผู้โดเนทสูงสุด</td></tr>
+          <tr><td></td><td class="mono">GET …/donations-latest/{token}</td><td><span class="role pub">token</span></td><td>รายการโดเนทล่าสุด</td></tr>
+          <tr><td></td><td class="mono">GET …/goal/{token}</td><td><span class="role pub">token</span></td><td>ความคืบหน้าของเป้าหมายโดเนท</td></tr>
+          <tr><td></td><td class="mono">POST /&lt;name&gt;-gw/test</td><td><span class="role">JWT</span></td><td>ยิงเหตุการณ์ทดสอบเข้า overlay จากแดชบอร์ด</td></tr>
+
+          <tr class="cg"><td>payment</td><td class="mono">POST /payments/create</td><td><span class="role pub">public</span></td><td>สร้างรายการชำระเงิน + ขอ QR จาก AQ1</td></tr>
+          <tr><td></td><td class="mono">GET /payments/promptpay/{paymentId}</td><td><span class="role pub">public</span></td><td>อ่านสถานะการชำระ (ใช้ polling จากหน้าจ่ายเงิน)</td></tr>
+          <tr><td></td><td class="mono">POST /payments/promptpay/callback</td><td><span class="role pub">public</span></td><td>รับผลจาก gateway → สร้าง Donation → ยิง overlay ทั้งสี่</td></tr>
+          <tr><td></td><td class="mono">POST /aq1/webhook</td><td><span class="role pub">public</span></td><td>ทางเข้า webhook อีกเส้น แยกตาม <code>data.type</code> (deposit / withdraw)</td></tr>
+
+          <tr class="cg"><td>public</td><td class="mono">GET /donate/{username}</td><td><span class="role pub">public</span></td><td>ข้อมูลหน้าโดเนทสาธารณะของสตรีมเมอร์</td></tr>
+          <tr><td></td><td class="mono">GET /bank-names · /bank-names/{bankCode}</td><td><span class="role pub">public</span></td><td>รายชื่อธนาคารสำหรับฟอร์ม KYC</td></tr>
+          <tr><td></td><td class="mono">GET /bank-names/aq1 · /aq1/bank-names</td><td><span class="role pub">public</span></td><td>รหัสธนาคารตามฝั่ง AQ1</td></tr>
+          <tr><td></td><td class="mono">GET /healthcheck</td><td><span class="role pub">public</span></td><td>ตรวจสถานะเซอร์วิส</td></tr>
+
+          <tr class="ca"><td>file</td><td class="mono">POST /file/upload</td><td><span class="role">JWT</span></td><td>อัปโหลดไฟล์ขึ้น S3 ตามโฟลเดอร์ที่อนุญาต</td></tr>
+          <tr><td></td><td class="mono">GET /file/private/{key}</td><td><span class="role">JWT</span></td><td>ออก presigned URL ให้ไฟล์ลับ</td></tr>
+
+          <tr class="ca"><td>bo/users</td><td class="mono">GET · POST /bo/users</td><td><span class="role adm">ADMIN</span></td><td>รายชื่อผู้ใช้ทั้งระบบ และสร้างผู้ใช้ใหม่</td></tr>
+          <tr><td></td><td class="mono">GET · PUT · DELETE /bo/users/{id}</td><td><span class="role adm">ADMIN</span></td><td>ดู แก้ไข ลบผู้ใช้</td></tr>
+
+          <tr class="ca"><td>bo/bank-accounts</td><td class="mono">GET · POST /bo/bank-accounts</td><td><span class="role adm">ADMIN</span></td><td>รายการคำขอเปิดบัญชี และสร้างรายการใหม่</td></tr>
+          <tr><td></td><td class="mono">GET · PUT · DELETE /bo/bank-accounts/{id}</td><td><span class="role adm">ADMIN</span></td><td>ดูเอกสาร แก้ไข ลบ</td></tr>
+          <tr><td></td><td class="mono">PATCH /bo/bank-accounts/{id}/status</td><td><span class="role adm">ADMIN</span></td><td>อนุมัติ/ไม่อนุมัติ — สร้างลูกค้าฝั่ง AQ1 และมิเรอร์สถานะกลับไปที่ <code>User</code></td></tr>
+
+          <tr class="ca"><td>bo/receipts</td><td class="mono">GET /bo/receipts</td><td><span class="role adm">ADMIN</span></td><td>รายการจ่ายเงินออกทั้งระบบ</td></tr>
+          <tr class="ca"><td>bo/donations</td><td class="mono">GET /bo/donations · /bo/donations/{id}</td><td><span class="role adm">ADMIN</span></td><td>โดเนททั้งระบบและรายละเอียด</td></tr>
+          <tr><td></td><td class="mono">GET /bo/donations/analytics/*</td><td><span class="role adm">ADMIN</span></td><td>สรุป · ราย วัน / เดือน / ปี ทั้งระบบ</td></tr>
+
+          <tr class="ca"><td>อื่น ๆ</td><td class="mono">POST /email/test</td><td><span class="role pub">public</span></td><td>ทดสอบการส่งอีเมล</td></tr>
+          <tr><td></td><td class="mono">POST /cronjob/calculate-monthly-income</td><td><span class="role pub">public</span></td><td>สั่งคำนวณรายได้รายเดือนด้วยมือ (ปกติรันอัตโนมัติวันที่ 1)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gal-head"><h3>เอกสาร API (Swagger)</h3><span>เลื่อนดูภายในกรอบได้ · <code>/api-docs</code> และไฟล์ <code>public/swagger.json</code> ถูกเขียนใหม่ทุกครั้งที่บูต</span></div>
+    <div class="shots" data-group="api">
+      <figure class="shot tall"><div class="img"><img loading="lazy" src="capture-api/api-swagger.png" alt=""></div><figcaption><span class="n">1</span>Swagger UI — GiftMe API v1.0<small>endpoint ทั้ง 79 เส้นแยกตาม tag (Authentication · Profile · Payment · Overlay · Backoffice · Aq1 …) พร้อม schema ของ DTO และปุ่ม Authorize สำหรับ Bearer token</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WEB ===================== -->
+<section class="section web" id="web">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Frontend · Next.js App Router</span>
+        <h2>giftme-web — เว็บผู้ใช้ แดชบอร์ด และแบ็กออฟฟิศ</h2>
+        <p>เว็บเดียวครอบคลุมสี่กลุ่มหน้าที่แยกด้วย route group: หน้าเข้าสู่ระบบ/สมัคร <code>(auth)</code> · หน้าการตลาดและเอกสาร <code>(landing)</code> · แดชบอร์ดสตรีมเมอร์ หน้าโดเนทสาธารณะ และ overlay <code>(user)</code> · แบ็กออฟฟิศผู้ดูแล <code>backoffice</code> ทุกหน้าใช้ธีมมืดเป็นค่าเริ่มต้น เนื้อหาเป็นภาษาไทย และแสดงวันที่แบบ พ.ศ.</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Next.js</b> 14.2 (App Router)</li>
+          <li><b>React</b> 18.3</li>
+          <li><b>TypeScript</b> 5.5</li>
+          <li><b>NextUI</b> 2.6</li>
+          <li><b>Tailwind CSS</b> 3.4</li>
+          <li>ApexCharts + react-apexcharts</li>
+          <li>qrcode.react</li>
+          <li>socket.io-client 4.8</li>
+          <li>Zod 3 (ตรวจฟอร์ม)</li>
+          <li>@t3-oss/env-nextjs</li>
+          <li>jose (ถอด JWT ที่ edge)</li>
+          <li>framer-motion · animate.css</li>
+          <li>react-text-to-speech</li>
+          <li>canvas-confetti</li>
+          <li>react-toastify · @iconify/react</li>
+          <li>axios · lodash</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🔗</span>สายเรียก API 4 ชั้น</h3>
+        <ul class="svc">
+          <li><span class="sic">①</span><div><b>Server Action</b><span><code>src/actions/{user,backoffice}/*.action.ts</code> ประกาศ <code>"use server"</code> · ฟอร์มที่เขียนข้อมูลตรวจ <code>FormData</code> ด้วย zod <code>safeParse</code> แล้วคืน field error ให้ <code>useFormState</code></span></div></li>
+          <li><span class="sic">②</span><div><b>Service singleton</b><span><code>src/services/**</code> ทุกตัว extends <code>BaseService</code> และ export เป็นอินสแตนซ์เดียว เช่น <code>profileService</code></span></div></li>
+          <li><span class="sic">③</span><div><b>handleRequest</b><span>คืน <code>ServiceResponse&lt;T&gt;</code> = <code>{ data }</code> หรือ <code>{ error }</code> เสมอ ไม่เคย throw และเลือกข้อความจาก body ของ backend ก่อนข้อความของ axios</span></div></li>
+          <li><span class="sic">④</span><div><b>backendApi (axios)</b><span>อินสแตนซ์เดียวใน <code>src/lib/backend-api.ts</code> ที่ interceptor แนบ <code>Authorization: Bearer</code> ให้อัตโนมัติ — client component ไม่เคยยิง API เอง</span></div></li>
+          <li><span class="sic">🍪</span><div><b>Session</b><span>JWT เก็บใน cookie <code>session</code> แบบ httpOnly · <code>middleware.ts</code> กัน <code>/dashboard/*</code> และ <code>/backoffice/*</code> โดยถอด token ที่ edge และบังคับบทบาท ADMIN/SUPER_ADMIN สำหรับแบ็กออฟฟิศ</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>ฟีเจอร์โดยสรุป</h3>
+        <ul class="feat">
+          <li><b>Landing</b> แนะนำบริการ · วิดีโอสอนใช้งาน · คำถามที่พบบ่อย · เอกสารข้อกำหนดและนโยบาย</li>
+          <li><b>สมัคร / เข้าสู่ระบบ</b> อีเมล + รหัสผ่าน หรือ Streamlabs · ยืนยันอีเมล · ลืมรหัสผ่านพร้อมลิงก์หมดอายุ 15 นาที</li>
+          <li><b>สถิติ</b> กราฟยอดโดเนทราย วัน / เดือน / ปี ด้วย ApexCharts ส่งออกเป็นรูปหรือ CSV ได้</li>
+          <li><b>บัญชีผู้ใช้</b> แก้โปรไฟล์ · เปลี่ยน/ยืนยันอีเมล</li>
+          <li><b>บัญชีธนาคาร</b> ยื่นเอกสาร KYC (บัตรประชาชน · เซลฟี่คู่บัตร · หน้าสมุดบัญชี) และติดตามสถานะการตรวจ</li>
+          <li><b>วิธีชำระเงิน</b> เปิด‑ปิด PromptPay / TrueWallet / LINE Pay พร้อมกำหนดยอดขั้นต่ำต่อช่องทาง</li>
+          <li><b>หน้าโดเนท</b> ตั้งชื่อ รูปโปรไฟล์ แบนเนอร์ ภาพพื้นหลัง ลิงก์ และข้อความตอนสำเร็จ/ไม่สำเร็จ</li>
+          <li><b>ตกแต่งแจ้งเตือน</b> ปรับ overlay ทั้งสี่ตัว พร้อมตัวอย่างสดและปุ่มทดสอบยิงเข้า OBS</li>
+          <li><b>รายการโดเนท / ใบเสร็จ</b> ค้นหา กรองตามช่องทางหรือสถานะ และแบ่งหน้า</li>
+          <li><b>แบ็กออฟฟิศ</b> จัดการผู้ใช้ · ตรวจอนุมัติบัญชีธนาคาร · รายการจ่ายเงิน · สถิติรวมทั้งระบบ</li>
+          <li><b>หน้าโดเนทสาธารณะ</b> ไม่ต้องล็อกอิน กรอกชื่อ ข้อความ ยอดเงิน แล้วรับ QR PromptPay พร้อมนับถอยหลังและเช็กสถานะอัตโนมัติ</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอ — ผู้ใช้และสตรีมเมอร์</h3><span>14 หน้าจอ · คลิกเพื่อขยาย</span></div>
+    <div class="shots screens" data-group="web">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-2026-09-23-13_07_41.png" alt=""></div><figcaption><span class="n">1</span>หน้าแรก (Landing)<small>จุดขายสามข้อ · วิดีโอสอนตั้งค่า Streamlabs · คำถามที่พบบ่อย · ข้อมูลบริษัทและลิงก์เอกสาร</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-forget-password-2026-09-23-13_09_05.png" alt=""></div><figcaption><span class="n">2</span>ลืมรหัสผ่าน<small>กรอกอีเมลเพื่อขอลิงก์รีเซ็ต · เลย์เอาต์สองคอลัมน์ของกลุ่มหน้า <code>(auth)</code></small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-mail-google-mail-u-1-2026-09-23-13_10_15.png" alt=""></div><figcaption><span class="n">3</span>อีเมลคำขอรีเซ็ตรหัสผ่าน<small>เทมเพลต HTML จาก <code>EmailService</code> · ปุ่มรีเซ็ตพร้อมลิงก์สำรองที่มี <code>code</code> และหมดอายุใน 15 นาที</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-user-info-2026-09-23-13_11_21.png" alt=""></div><figcaption><span class="n">4</span>บัญชีผู้ใช้<small>ชื่อ อีเมล บทบาท และชื่อโดเมนของหน้าโดเนท · การ์ดยืนยันอีเมลแสดงสถานะ “ยืนยันแล้ว”</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-bank-account-2026-09-23-13_11_31.png" alt=""></div><figcaption><span class="n">5</span>บัญชีธนาคาร (KYC)<small>ข้อมูลบัญชีและสถานะการยืนยัน · เอกสารสามใบเสิร์ฟผ่าน presigned URL ที่ออกใหม่ทุกครั้ง · หมายเหตุจากผู้ตรวจ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-payment-methods-2026-09-23-13_11_47.png" alt=""></div><figcaption><span class="n">6</span>วิธีชำระเงิน<small>PromptPay เปิดใช้งาน ส่วน TrueWallet และ LINE Pay ปิดอยู่ · ตั้งยอดขั้นต่ำแยกต่อช่องทาง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-2026-09-23-13_14_56.png" alt=""></div><figcaption><span class="n">7</span>สถิติ — กราฟรายวัน<small>ยอดโดเนทแยกตามวันของเดือนปัจจุบัน · เมนูส่งออกของ ApexCharts มุมขวาบน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-2026-09-23-13_15_02.png" alt=""></div><figcaption><span class="n">8</span>สถิติ — กราฟรายเดือน<small>สรุป 12 เดือนของปีที่เลือก</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-2026-09-23-13_15_07.png" alt=""></div><figcaption><span class="n">9</span>สถิติ — กราฟรายปี<small>เปรียบเทียบยอดรวมย้อนหลังหลายปี</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.14.06.png" alt=""></div><figcaption><span class="n">10</span>รายการโดเนท<small>ชื่อผู้โดเนท ยอดเงิน ช่องทาง และเวลา · ค้นหาและกรองตามช่องทางชำระเงิน พร้อมแบ่งหน้า</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.14.15.png" alt=""></div><figcaption><span class="n">11</span>ใบเสร็จรับเงิน<small>เลขที่ <code>TX…</code> ยอดรวม ค่าธรรมเนียม และสถานะ (รอตรวจสอบ · อนุมัติแล้ว · ไม่อนุมัติ) ที่ cron สร้างให้ทุกต้นเดือน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-customize-donate-profile-2026-09-23-13_14_46.png" alt=""></div><figcaption><span class="n">12</span>ตกแต่งหน้าโดเนท<small>URL หน้าโดเนทที่ผูกกับ username · รูปโปรไฟล์ 240×240 · แบนเนอร์ 778×240 · ภาพพื้นหลัง · ข้อความตอนสำเร็จและไม่สำเร็จ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-dashboard-customize-alert-2026-09-23-13_14_29.png" alt=""></div><figcaption><span class="n">13</span>ตกแต่งแจ้งเตือนโดเนท<small>URL overlay + ปุ่ม Reset URL · ตัวอย่างสด · สี ฟอนต์ เวลาแสดง แอนิเมชันเข้า‑ออก เสียงแจ้งเตือน เสียงอ่านข้อความ และรายการคำหยาบเพิ่มเติม</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-8000-ta-natthawat-2026-09-23-13_15_28.png" alt=""></div><figcaption><span class="n">14</span>หน้าโดเนทสาธารณะ <code>/[username]</code><small>แบนเนอร์ รูปโปรไฟล์ ลิงก์ และข้อความต้อนรับที่สตรีมเมอร์ตั้งไว้ · ฟอร์มชื่อ ข้อความ ช่องทาง และยอดเงินตามขอบเขตที่กำหนด</small></figcaption></figure>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอ — แบ็กออฟฟิศ</h3><span>6 หน้าจอ · เข้าถึงได้เฉพาะบทบาท ADMIN และ SUPER_ADMIN</span></div>
+    <div class="shots screens" data-group="bo">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.17.11.png" alt=""></div><figcaption><span class="n">1</span>สถิติรวมทั้งระบบ<small>กราฟชุดเดียวกับฝั่งสตรีมเมอร์ แต่ดึงจาก <code>bo/donations/analytics/*</code> ซึ่งรวมโดเนทของผู้ใช้ทุกคน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.16.25.png" alt=""></div><figcaption><span class="n">2</span>รายการผู้ใช้<small>บทบาท สถานะการยืนยันอีเมล และสถานะบัญชี · กรองตามบทบาทและสถานะ · ปุ่มดู แก้ไข ลบต่อแถว</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.16.34.png" alt=""></div><figcaption><span class="n">3</span>สร้างบัญชีผู้ใช้<small>โมดัลอัปโหลดรูปแบบลากวาง (PNG/JPG/GIF ไม่เกิน 10MB) พร้อมเลือกบทบาท</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.16.46.png" alt=""></div><figcaption><span class="n">4</span>รายการเปิดบัญชีธนาคาร<small>ธนาคาร เลขบัญชี เจ้าของบัญชี สถานะการตรวจ และไฟล์เอกสารแนบ · กรองตามธนาคารและสถานะ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.16.51.png" alt=""></div><figcaption><span class="n">5</span>รายละเอียดบัญชีธนาคาร<small>โมดัลตรวจเอกสาร — ข้อมูลธนาคาร ข้อมูลเจ้าของบัญชี วันที่ตรวจ หมายเหตุ และเอกสารสามใบ การอนุมัติที่นี่จะสร้างลูกค้าฝั่ง AQ1 ให้ด้วย</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-23%20at%2013.17.01.png" alt=""></div><figcaption><span class="n">6</span>รายการจ่ายเงิน<small>ใบเสร็จของผู้ใช้ทุกคน พร้อมยอดเงิน ค่าธรรมเนียม และสถานะการตรวจสอบ</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== OVERLAY ===================== -->
+<section class="section ov" id="overlay">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Realtime · OBS Browser Source</span>
+        <h2>Overlay — การแจ้งเตือนบนหน้าจอสตรีม</h2>
+        <p>สิ่งที่ทำให้ GiftMe เป็นมากกว่าหน้าเก็บเงินคือ overlay สี่ตัวที่สตรีมเมอร์เอา URL ไปวางเป็น browser source ใน OBS แล้วการโดเนทที่ชำระสำเร็จจะเด้งขึ้นหน้าจอทันทีโดยไม่ต้องรีเฟรช ข้อจำกัดคือ OBS ส่ง header ไม่ได้ ระบบจึงใช้ <b>token ในตัว URL เป็นตัวยืนยันตัวตน</b> แทน JWT ทั้งฝั่ง REST และ WebSocket</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#ov-widgets">4 widget</a><a href="#ov-token">การยืนยันด้วย token</a><a href="#ov-ui">หน้าตั้งค่า</a><a href="#ov-flow">Flow การโดเนท</a>
+    </div>
+
+    <div class="grid3" id="ov-widgets">
+      <div class="card">
+        <h3><span class="ic">🔔</span>widget ทั้งสี่</h3>
+        <ul class="feat">
+          <li><b>Alert</b> การ์ดแจ้งเตือนรายครั้ง — สี ฟอนต์ รูป เวลาแสดง แอนิเมชันเข้า‑ออก (animate.css) เสียงแจ้งเตือน และเสียงอ่านข้อความ</li>
+          <li><b>Top Donator</b> อันดับผู้โดเนทสูงสุด 3 คน นับตั้งแต่ <code>startDateAt</code></li>
+          <li><b>Donate Latest</b> รายการโดเนทล่าสุด</li>
+          <li><b>Donate Goal</b> หลอดความคืบหน้าเทียบกับ <code>amountGoal</code> ในช่วงวันที่กำหนด</li>
+          <li>ทั้งสี่ตัวมีโครงเหมือนกันทุกชั้น (module ฝั่ง API · ตาราง setting · หน้าเว็บ · ฟอร์มตั้งค่า) การแก้ที่ตัวหนึ่งจึงมักต้องทำซ้ำอีกสามตัว</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🔑</span>token คือกุญแจ</h3>
+        <ul class="feat">
+          <li>ทุกแถว <code>Overlay*Setting</code> ถือ <code>token</code> สุ่มที่ unique และถูกฝังอยู่ใน URL ของ overlay</li>
+          <li>Socket.IO gateway (<code>path: '/alert-gw'</code> ฯลฯ, CORS <code>*</code>) ยืนยันตัวตนใน <code>handleConnection</code> ด้วยการหา <code>handshake.query.token</code> ในฐานข้อมูล ถ้าไม่พบจะ <code>client.disconnect()</code></li>
+          <li>เก็บการเชื่อมต่อเป็น <code>Map&lt;token, Set&lt;Socket&gt;&gt;</code> จึงเปิดหลายหน้าต่างพร้อมกันได้</li>
+          <li>เส้น REST คู่กัน <code>@Get(':token')</code> เปิดสาธารณะโดยตั้งใจ อยู่ในคอนโทรลเลอร์เดียวกับเส้นที่ป้องกันด้วย JWT</li>
+          <li><code>PATCH reset-token</code> ใช้หมุน token ใหม่เมื่อ URL หลุด — URL เดิมจะใช้ไม่ได้ทันที</li>
+          <li>ค่าตั้งไม่ได้ถูก seed ตอนสมัคร แต่ละ service จะเรียก <code>createDefaultSetting()</code> ด้วยค่าภาษาไทยที่ฮาร์ดโค้ดไว้ตอนเรียก <code>getSetting()</code> ครั้งแรก</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🎛</span>รายละเอียดที่ปรับได้</h3>
+        <ul class="feat">
+          <li><b>ยอดขั้นต่ำ</b> แยกกันระหว่างการแสดงผล เสียงแจ้งเตือน และเสียงอ่านข้อความ</li>
+          <li><b>กรองคำหยาบ</b> ทุก widget มี <code>additionalBadWords</code> ให้เติมคำเองนอกเหนือจากรายการพื้นฐาน</li>
+          <li><b>เสียงอ่านข้อความ</b> ใช้ <code>react-text-to-speech</code> อ่านข้อความของผู้โดเนทออกลำโพง</li>
+          <li><b>แอนิเมชัน</b> เลือกท่าเข้า‑ออกจาก animate.css พร้อมกำหนดระยะเวลาเป็นวินาที</li>
+          <li><b>ปุ่มทดสอบ</b> <code>POST /&lt;name&gt;-gw/test</code> ยิงเหตุการณ์ปลอมเข้า overlay จากแดชบอร์ดได้โดยไม่ต้องโดเนทจริง</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head" id="ov-ui"><h3>หน้าตกแต่งแจ้งเตือนโดเนท — ทั้งสี่แท็บ</h3><span><code>/dashboard/customize-alert</code> · หนึ่งหน้าคุม widget ทั้งสี่ ด้วยโครงเดียวกัน: URL overlay + Reset URL → ตัวอย่างสด → ฟอร์มค่าตั้ง → ปุ่มบันทึก</span></div>
+    <div class="shots screens" data-group="ovui">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/customize-alert/screencapture-localhost-8000-dashboard-customize-alert-2026-09-23-13_33_52.png" alt=""></div><figcaption><span class="n">1</span>แท็บ Alert — การ์ดแจ้งเตือนรายครั้ง<small>ฟอร์มยาวที่สุดในสี่ตัว: สี Highlight/ชื่อ/ข้อความ · รูปประกอบ · เวลาแสดง 1–60 วินาที · ฟอนต์ชื่อ Chonburi และฟอนต์ข้อความ Sriracha พร้อมขนาด 10–200px · ข้อความโดเนทและตัวเลือกขึ้นบรรทัดใหม่ · Animation เข้า <code>backInDown</code> ออก <code>backOutLeft</code> · เสียงแจ้งเตือนและเสียงอ่านข้อความแยกระดับเสียงกัน · ยอดขั้นต่ำสามค่าแยกอิสระ · รายการคำหยาบเพิ่มเติม — ปุ่ม “Install Alert (เชื่อมต่อ Streamlabs)” อยู่ข้างปุ่ม Reset URL</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/customize-alert/screencapture-localhost-8000-dashboard-customize-alert-2026-09-23-13_33_59.png" alt=""></div><figcaption><span class="n">2</span>แท็บ Top Donator — อันดับผู้โดเนทสูงสุด<small>ตัวอย่างแสดงชื่อและยอดตามค่าที่ตั้ง · เลือก “วันที่เริ่มนับ” เพื่อรีเซ็ตรอบการจัดอันดับ (<code>startDateAt</code>) · สีและฟอนต์แยกกันระหว่างชื่อกับจำนวนเงิน · การจัดวาง 4 แบบ (ชื่อ‑ยอดบนล่าง · เรียงข้างกัน · สลับลำดับ) และการจัดชิด 3 แบบ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/customize-alert/screencapture-localhost-8000-dashboard-customize-alert-2026-09-23-13_34_04.png" alt=""></div><figcaption><span class="n">3</span>แท็บ Donate Latest — โดเนทล่าสุด<small>ชุดค่าตั้งเหมือน Top Donator เกือบทั้งหมด ต่างกันที่ไม่มีวันที่เริ่มนับ และการจัดชิดเหลือ 2 แบบ (กึ่งกลาง · ชิดขอบ) — เป็นตัวอย่างชัดเจนของความเป็น widget ฝาแฝดที่ต้องแก้ตามกันทุกครั้ง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/customize-alert/screencapture-localhost-8000-dashboard-customize-alert-2026-09-23-13_34_13.png" alt=""></div><figcaption><span class="n">4</span>แท็บ Donate Goal — เป้าหมายการโดเนท<small>ตัวอย่างแสดงหลอดความคืบหน้าพร้อมเปอร์เซ็นต์และยอดเทียบเป้า · ตั้งชื่อเป้าหมาย จำนวนเงิน และช่วงวันที่เริ่ม‑สิ้นสุด · เพิ่มสีเส้น Progress ที่ widget อื่นไม่มี และเป็นตัวเดียวที่ไม่มีช่องกรองคำหยาบ เพราะไม่ได้แสดงข้อความของผู้โดเนท</small></figcaption></figure>
+    </div>
+
+    <div class="darch" id="ov-flow">
+      <h3>Flow การโดเนทตั้งแต่สแกน QR จนขึ้นหน้าจอสตรีม</h3>
+      <p>แถวบนคือขาสร้างรายการและขอ QR แถวล่างคือขายืนยันผลจาก AQ1 ที่จบด้วยการยิง Socket.IO เข้า OBS · หน้าจ่ายเงินของผู้โดเนทเปลี่ยนสถานะเองจากการ polling ไม่ต้องรีเฟรช</p>
+      <svg viewBox="0 0 1000 320" role="img" aria-label="แผนภาพลำดับการโดเนทของ GiftMe">
+        <defs>
+          <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+          <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--gw)"/></marker>
+          <marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ov)"/></marker>
+        </defs>
+
+        <rect class="box w" x="23" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="108" y="60" text-anchor="middle">ผู้โดเนท</text>
+        <text class="sub" x="108" y="78" text-anchor="middle">หน้า /[username]</text>
+        <text class="sub" x="108" y="93" text-anchor="middle">กรอกชื่อ ข้อความ ยอดเงิน</text>
+
+        <rect class="box w" x="219" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="304" y="60" text-anchor="middle">createPaymentAction</text>
+        <text class="sub" x="304" y="78" text-anchor="middle">Server Action ฝั่งเว็บ</text>
+        <text class="sub" x="304" y="93" text-anchor="middle">ตรวจฟอร์มด้วย zod</text>
+
+        <rect class="box a" x="415" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="500" y="60" text-anchor="middle">PaymentService</text>
+        <text class="sub" x="500" y="78" text-anchor="middle">POST /v1/payments/create</text>
+        <text class="sub" x="500" y="93" text-anchor="middle">ต้องมี aq1CustomerUUID</text>
+
+        <rect class="box g" x="611" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="696" y="60" text-anchor="middle">AQ1 requestDeposit</text>
+        <text class="sub" x="696" y="78" text-anchor="middle">คืน uuid · qrCode · link</text>
+        <text class="sub" x="696" y="93" text-anchor="middle">พร้อมเวลาหมดอายุ QR</text>
+
+        <rect class="box d" x="807" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="892" y="60" text-anchor="middle">บันทึก Payment</text>
+        <text class="sub" x="892" y="78" text-anchor="middle">status PENDING</text>
+        <text class="sub" x="892" y="93" text-anchor="middle">เว็บแสดง QR + นับถอยหลัง</text>
+
+        <path class="edge" d="M193 71 L214 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M389 71 L410 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M585 71 L606 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M781 71 L802 71" marker-end="url(#b1)"/>
+
+        <path class="edge in" d="M892 106 L892 176" marker-end="url(#b2)"/>
+        <text class="elbl" x="900" y="145">ผู้โดเนทสแกนจ่าย</text>
+
+        <rect class="box g" x="807" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="892" y="204" text-anchor="middle">AQ1 แจ้งผล</text>
+        <text class="sub" x="892" y="222" text-anchor="middle">POST /payments/promptpay</text>
+        <text class="sub" x="892" y="237" text-anchor="middle">/callback หรือ /aq1/webhook</text>
+
+        <rect class="box a" x="611" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="696" y="204" text-anchor="middle">อัปเดตสถานะ</text>
+        <text class="sub" x="696" y="222" text-anchor="middle">Payment → COMPLETED</text>
+        <text class="sub" x="696" y="237" text-anchor="middle">เก็บ webhookData ดิบไว้</text>
+
+        <rect class="box a" x="415" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="500" y="204" text-anchor="middle">สร้าง Donation</text>
+        <text class="sub" x="500" y="222" text-anchor="middle">แล้วผูก donationId</text>
+        <text class="sub" x="500" y="237" text-anchor="middle">กลับไปที่ Payment</text>
+
+        <rect class="box o" x="219" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="304" y="204" text-anchor="middle">ยิง 4 gateway</text>
+        <text class="sub" x="304" y="222" text-anchor="middle">alert · top-donator</text>
+        <text class="sub" x="304" y="237" text-anchor="middle">donate-latest · donate-goal</text>
+
+        <rect class="box o" x="23" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="108" y="204" text-anchor="middle">OBS Browser Source</text>
+        <text class="sub" x="108" y="222" text-anchor="middle">Socket.IO ตาม token</text>
+        <text class="sub" x="108" y="237" text-anchor="middle">การ์ดแจ้งเตือนเด้งขึ้นจอ</text>
+
+        <path class="edge in" d="M802 212 L786 212" marker-end="url(#b2)"/>
+        <path class="edge" d="M606 212 L590 212" marker-end="url(#b1)"/>
+        <path class="edge" d="M410 212 L394 212" marker-end="url(#b1)"/>
+        <path class="edge out" d="M214 212 L198 212" marker-end="url(#b3)"/>
+
+        <path class="edge ext" d="M108 106 L108 176" marker-end="url(#b1)"/>
+        <text class="elbl" x="14" y="145">polling สถานะ</text>
+      </svg>
+      <div class="legend-row">
+        <span>ขาสร้างรายการและขอ QR</span><span class="in">ขายืนยันผลจาก AQ1</span><span class="out">push เข้า overlay ผ่าน Socket.IO</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== GATEWAY ===================== -->
+<section class="section gw" id="gateway">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Integration · AQ1 Payment Gateway</span>
+        <h2>การเชื่อมต่อระบบชำระเงิน</h2>
+        <p>เงินทุกบาทวิ่งผ่าน AQ1 ทั้งขาเข้า (ผู้โดเนทสแกน PromptPay) และขาออก (โอนเข้าบัญชีสตรีมเมอร์) <code>Aq1Service</code> ห่อทุกเมธอดไว้ด้วย <code>safeAxiosCall</code> ที่คืนค่าเป็นทูเพิลสไตล์ Go คือ <code>Promise&lt;[Error | null, T | null]&gt;</code> ต่างจากส่วนอื่นของ API ที่โยน exception ของ Nest · เครื่องพัฒนาใช้ WireMock จำลอง gateway ทั้งชุดจึงทดสอบครบวงจรได้โดยไม่ต้องมี ngrok</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">🔌</span>Gateway client</h3>
+        <ul class="feat">
+          <li>อยู่ที่ <code>src/aq1/aq1.service.ts</code> — ทุกเมธอดวิ่งผ่าน <code>safeAxiosCall</code> ตัวเดียว</li>
+          <li>Base URL ตั้งด้วย <code>AQ1_BASE_URL</code> · ยืนยันตัวตนด้วย <code>AQ1_ACCESS_KEY</code> + <code>AQ1_SECRET_KEY</code></li>
+          <li>token ที่ได้จาก <code>authenticate()</code> ถูก cache ไว้ในหน่วยความจำตลอดอายุโปรเซส และไม่มีการต่ออายุ</li>
+          <li>ผู้เรียกต้องเช็กทั้ง error และ <code>data.success</code> เพราะ gateway ตอบ 200 พร้อมสถานะล้มเหลวได้</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧪</span>WireMock stand-in</h3>
+        <ul class="feat">
+          <li><code>giftme_aq1_mock</code> (พอร์ต 8090) จำลองทุก endpoint ที่ <code>Aq1Service</code> เรียก — หนึ่งไฟล์ mapping ต่อหนึ่งเส้น พร้อม body แบบ Handlebars ใน <code>wiremock/__files/</code></li>
+          <li>เส้นที่ไม่ได้ map จะได้ 404 ที่ระบุ method และ path กลับมา ทำให้รู้ทันทีว่าลืม stub อะไร</li>
+          <li><code>.env.local.bk</code> ตั้ง <code>AQ1_BASE_URL="http://localhost:8090"</code> ไว้ให้แล้ว</li>
+          <li>แก้ไฟล์ใต้ <code>wiremock/</code> แล้วสั่ง <code>npm run mock:aq1:reload</code> พอ ไม่ต้องรีสตาร์ต container</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">↩️</span>ตัวจำลอง webhook</h3>
+        <ul class="feat">
+          <li><code>giftme_aq1_callback</code> ทำหน้าที่ยิง webhook ที่ WireMock ส่งเองไม่ได้ เพราะ extension ของมันเห็นแค่ <code>originalRequest</code> จึงอ่าน uuid ที่เพิ่งสุ่มให้ไม่ได้</li>
+          <li>worker จึงตาม request journal ของ WireMock (ซึ่งเก็บ response ที่เรนเดอร์แล้ว) และ POST callback สถานะ <code>SUCCESS</code> กลับเข้า API</li>
+          <li>หน่วงเวลา 10 วินาทีสำหรับ deposit และ 5 วินาทีสำหรับ withdraw</li>
+          <li>ตั้ง <code>AQ1_MOCK_AUTO_CONFIRM=false</code> เพื่อให้รายการค้างเป็น pending แล้วยิงเองด้วย <code>npm run mock:aq1:webhook -- --status REJECTED</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>เมธอดที่เรียกไปยัง AQ1</h3><span>ทั้งหมด 11 เมธอดสาธารณะ บวก <code>authenticate</code> ภายใน ผ่าน <code>safeAxiosCall</code> เดียวกัน</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>เมธอด</th><th>ใช้ตอนไหน</th></tr></thead>
+        <tbody>
+          <tr class="cg"><td>requestDeposit</td><td>ขอ QR PromptPay ตอนผู้โดเนทกดยืนยัน — หัวใจของขาเข้า</td></tr>
+          <tr class="cg"><td>requestWithdraw</td><td>สั่งโอนเงินออกไปยังบัญชีของสตรีมเมอร์</td></tr>
+          <tr class="cg"><td>settleTransactions</td><td>ปิดรอบรายการเพื่อกระทบยอด</td></tr>
+          <tr class="cg"><td>createCustomer</td><td>สร้างลูกค้าฝั่ง AQ1 ตอนแบ็กออฟฟิศอนุมัติบัญชีธนาคาร แล้วเก็บ <code>aq1CustomerUUID</code> ไว้ที่ <code>BankAccount</code></td></tr>
+          <tr class="cg"><td>updateCustomerAccount</td><td>แก้ข้อมูลบัญชีรับเงินของลูกค้า</td></tr>
+          <tr class="cg"><td>updateCustomerStatus</td><td>เปิด‑ปิดสถานะลูกค้า</td></tr>
+          <tr class="cg"><td>getBankCodes</td><td>รายชื่อ/รหัสธนาคารที่ AQ1 รองรับ ใช้กับฟอร์ม KYC</td></tr>
+          <tr class="cg"><td>getBalance</td><td>ยอดคงเหลือของบัญชีร้านค้า</td></tr>
+          <tr class="cg"><td>updateMerchantSettings</td><td>แก้ค่าตั้งระดับร้านค้า</td></tr>
+          <tr class="cg"><td>getTransactions</td><td>รายการธุรกรรมฝั่ง gateway</td></tr>
+          <tr class="cg"><td>getTransactionDetail</td><td>รายละเอียดธุรกรรมรายรายการ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DEPLOY ===================== -->
+<section class="section deploy" id="deploy">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Local dev · Docker · CI/CD</span>
+        <h2>การพัฒนาและการ Deploy</h2>
+        <p>ทั้งสองโปรเจกต์เป็น npm project อิสระ ไม่มี workspace ร่วม จึงต้อง <code>npm i</code> แยกกัน · ใช้ Node 20 และ <code>run-script-os</code> เพื่อให้สคริปต์ทำงานได้ทั้ง macOS/Linux และ Windows · เครื่องพัฒนายก PostgreSQL และ AQ1 mock ขึ้นด้วย docker compose แล้วรันแอปจาก source ส่วนการขึ้นระบบใช้ GitHub Actions สร้าง image แล้ว push ขึ้น Docker Hub</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#dep-local">เครื่องพัฒนา</a><a href="#dep-images">Docker image</a><a href="#dep-cicd">CI/CD</a><a href="#dep-config">ตัวแปรสภาพแวดล้อม</a><a href="#dep-notes">ข้อสังเกต</a>
+    </div>
+
+    <div class="grid3" id="dep-local">
+      <div class="card">
+        <h3><span class="ic">🧰</span>Dependency ฝั่งเครื่องพัฒนา</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL 16</b><span>container <code>giftme_db</code> · พอร์ต 5432 · เปิด <code>log_statement=all</code> และตั้ง timezone เป็น UTC · ข้อมูล bind mount ไว้ที่ <code>./postgres_data</code></span></div></li>
+          <li><span class="sic">🧪</span><div><b>WireMock 3.13</b><span>container <code>giftme_aq1_mock</code> · พอร์ต 8090 · จำลอง AQ1 ทั้งชุดจาก <code>wiremock/mappings</code></span></div></li>
+          <li><span class="sic">↩️</span><div><b>Callback worker</b><span>container <code>giftme_aq1_callback</code> (node:20-alpine) ยิง webhook กลับเข้า API ให้โดเนทจบครบวงจรบนเครื่องตัวเอง</span></div></li>
+          <li><span class="sic">🪣</span><div><b>AWS S3 จริง</b><span>ไม่มีตัวจำลอง — การอัปโหลดบนเครื่องพัฒนาชี้ไปที่บักเก็ตจริงตามค่าใน <code>.env</code></span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">▶</span>ขั้นตอนรันระบบ</h3>
+        <ol class="steps">
+          <li><code>nvm use 20</code> <small>— ทั้งสองโปรเจกต์ล็อก Node 20.x</small></li>
+          <li><code>cd giftme-api &amp;&amp; npm i</code> แล้ว <code>npm run set:local</code> <small>— คัดลอก <code>.env.local.bk</code> เป็น <code>.env</code></small></li>
+          <li><code>npm run db:up</code> <small>— ยก postgres + AQ1 mock + callback worker</small></li>
+          <li><code>npm run db:migrate</code> แล้ว <code>npm run db:seeds</code> <small>— สร้างตารางและข้อมูลตั้งต้น</small></li>
+          <li><code>npm run dev</code> <small>— API ที่พอร์ต 3000</small></li>
+          <li><code>cd giftme-web &amp;&amp; npm i &amp;&amp; npm run set:local &amp;&amp; npm run dev</code> <small>— เว็บที่พอร์ต 8000</small></li>
+        </ol>
+        <p class="fine">Swagger อยู่ที่ <code>http://localhost:3000/api-docs</code> · คำสั่งอื่นที่ใช้บ่อย: <code>db:studio</code> · <code>db:generate</code> · <code>db:down</code> · <code>mock:aq1:logs</code> · ฝั่งเว็บใช้ <code>npm run check</code> (lint + typecheck) เป็นประตูตรวจก่อนส่งงาน</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧩</span>สถานะของชุดทดสอบ</h3>
+        <ul class="feat">
+          <li>Jest ถูกตั้งค่าไว้ใน <code>giftme-api</code> (<code>testRegex: .*\.spec\.ts$</code> · rootDir <code>src</code>) แต่ <b>ยังไม่มีไฟล์ <code>.spec.ts</code> อยู่เลย</b> ทั้งสองโปรเจกต์ <code>npm test</code> จึงผ่านแบบว่างเปล่า</li>
+          <li><code>test:e2e</code> ชี้ไปที่ <code>./test/jest-e2e.json</code> ซึ่งยังไม่มีในทรี</li>
+          <li><code>giftme-web</code> ยังไม่มี test runner — ด่านตรวจคือ <code>next lint</code> + <code>tsc --noEmit</code></li>
+          <li>สเปกใหม่ควรวางใต้ <code>giftme-api/src/**</code> ให้ตรงรูปแบบ <code>*.spec.ts</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head" id="dep-images"><h3>Docker image</h3><span>หนึ่ง image ต่อหนึ่งโปรเจกต์ แต่แยก repository ตาม branch</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>Branch</th><th>โปรเจกต์</th><th>Dockerfile</th><th>Docker Hub repository</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td>dev</td><td>API</td><td class="mono">Dockerfile.backend</td><td class="mono">iamta/giftme-api-dev:latest</td></tr>
+          <tr class="ca"><td>main</td><td>API</td><td class="mono">Dockerfile.backend</td><td class="mono">iamta/giftme-api-prod:latest</td></tr>
+          <tr class="cw"><td>dev</td><td>Web</td><td class="mono">Dockerfile.frontend2</td><td class="mono">iamta/giftme-web-dev:latest</td></tr>
+          <tr class="cw"><td>main</td><td>Web</td><td class="mono">Dockerfile (ค่าเริ่มต้น)</td><td class="mono">enzoleroy/giftme-web:latest + :&lt;sha&gt;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid3 two" id="dep-cicd">
+      <div class="card">
+        <h3><span class="ic">⚙</span>CI/CD ของ API</h3>
+        <ul class="feat">
+          <li>สองไฟล์เวิร์กโฟลว์ที่โครงเหมือนกัน: <code>dev.yml</code> ทริกเกอร์จาก push เข้า <code>dev</code> และ <code>main.yml</code> จาก push เข้า <code>main</code></li>
+          <li>ทั้งคู่ <code>docker login</code> ด้วย secret <code>DOCKER_USER</code> / <code>DOCKER_PASSWORD</code> แล้ว build จาก <code>Dockerfile.backend</code></li>
+          <li>ติดแท็ก <code>:latest</code> อย่างเดียว ไม่มีแท็กตาม commit จึงย้อนเวอร์ชันจากรีจิสทรีไม่ได้</li>
+          <li>ไม่มีขั้นตอน lint / test / migrate ในไพป์ไลน์</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">⚙</span>CI/CD ของเว็บ</h3>
+        <ul class="feat">
+          <li><code>dev.yml</code> ทำงานเมื่อ push เข้า <code>dev</code> build จาก <code>Dockerfile.frontend2</code> ขึ้นบัญชี <code>iamta</code></li>
+          <li><code>main.yml</code> ใช้ <code>docker/build-push-action</code> พร้อม QEMU + Buildx สำหรับ <code>linux/amd64</code> ติดแท็กทั้ง <code>:latest</code> และ <code>:&lt;github.sha&gt;</code></li>
+          <li>สายหลักของเว็บ push ขึ้น <b>คนละบัญชี</b> (<code>enzoleroy</code>) และใช้ <b>คนละ Dockerfile</b> กับสาย dev</li>
+          <li><code>main.yml</code> ทริกเกอร์ด้วย <code>pull_request</code> ด้วย ทำให้ PR ทับแท็ก <code>:latest</code> ของ production ได้</li>
+        </ul>
+      </div>
+    </div>
+
+</section>
+
+<footer>
+  <div class="wrap">
+    GiftMe — giftme-api (NestJS 10 + Prisma + PostgreSQL + Socket.IO + AWS S3) · giftme-web (Next.js 14 App Router + React 18 + NextUI + Tailwind) · รับเงินผ่าน AQ1 Payment Gateway ด้วย PromptPay QR และแจ้งเตือนเข้า OBS แบบเรียลไทม์ · CI/CD GitHub Actions → Docker Hub · เอกสารนำเสนอโครงการ
+  </div>
+</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="x" id="lbClose" aria-label="ปิด">✕</button>
+  <button class="p" id="lbPrev" aria-label="ก่อนหน้า">‹</button>
+  <img id="lbImg" src="" alt="">
+  <button class="nx" id="lbNext" aria-label="ถัดไป">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+(function(){
+  // theme toggle
+  var root=document.documentElement,btn=document.getElementById('themeBtn');
+  try{var t=localStorage.getItem('giftme-theme');if(t)root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=dark?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('giftme-theme',next);}catch(e){}
+  });
+
+  // lightbox
+  var lb=document.getElementById('lb'),img=document.getElementById('lbImg'),cap=document.getElementById('lbCap');
+  var items=[],idx=0;
+  document.querySelectorAll('.shots').forEach(function(g){
+    var group=g.getAttribute('data-group');
+    g.querySelectorAll('.shot:not(.tall)').forEach(function(f){
+      var i=f.querySelector('img'),c=f.querySelector('figcaption');
+      var item={src:i.getAttribute('src'),cap:c.textContent.replace(/\s+/g,' ').trim(),group:group};
+      items.push(item);
+      f.addEventListener('click',function(){open(items.indexOf(item));});
+    });
+  });
+  function show(){var it=items[idx];img.src=it.src;cap.textContent=it.cap;}
+  function open(i){idx=i;show();lb.classList.add('open');document.body.style.overflow='hidden';}
+  function close(){lb.classList.remove('open');document.body.style.overflow='';}
+  function step(d){var g=items[idx].group;var n=idx;do{n=(n+d+items.length)%items.length;}while(items[n].group!==g);idx=n;show();}
+  document.getElementById('lbClose').onclick=close;
+  document.getElementById('lbPrev').onclick=function(e){e.stopPropagation();step(-1);};
+  document.getElementById('lbNext').onclick=function(e){e.stopPropagation();step(1);};
+  lb.addEventListener('click',function(e){if(e.target===lb)close();});
+  document.addEventListener('keydown',function(e){
+    if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);
+  });
+})();
+</script>
+</body>
+</html>

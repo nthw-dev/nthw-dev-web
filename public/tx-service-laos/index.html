@@ -743,17 +743,6 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
       </div>
     </div>
 
-    <div class="note">
-      <b>ลำดับชั้นการปิด Redis — หยาบไปละเอียด</b>
-      <ul>
-        <li><b>ระดับ deploy:</b> ตั้ง <code>REDIS_ENABLED=false</code> — ไม่สร้าง client เลย</li>
-        <li><b>ระดับ boot:</b> ping ไม่ผ่านตอนเริ่มระบบ — log เตือนแล้วไปใช้ SQL</li>
-        <li><b>ระดับ runtime:</b> ปิดสวิตช์ <code>bankSelectorRedisEnabled</code> จากหน้าตั้งค่า — ไม่ต้อง deploy ใหม่</li>
-        <li>ทั้งสามระดับลงเอยที่เส้นทาง SQL เดียวกัน ผลลัพธ์เชิงตรรกะเหมือนกัน</li>
-        <li><b>ข้อควรรู้:</b> สวิตช์มีแคช 30 วินาทีและแคชแยกตาม pod ช่วงสั้น ๆ หลังสลับอาจมี pod ที่ยังใช้เส้นทางเดิม · เมื่อเปิด Redis กลับหลังปิดไว้นาน ตัวนับอาจไม่ตรงและจะถูก warmup สร้างใหม่ให้เฉพาะวันที่ยังไม่เคย warm</li>
-      </ul>
-    </div>
-
     <div class="gal-head" id="gw-async"><h3>เมธอดที่เรียกไปยัง gateway</h3><span>ทั้งหมด 10 เมธอด ผ่าน <code>doRequest</code> เดียวและเซ็นลายเซ็นทุกครั้ง</span></div>
     <div class="tbl-wrap">
       <table class="cmp">
@@ -860,54 +849,6 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
       </div>
     </div>
 
-    <div class="note warn">
-      <b>ข้อสังเกตที่ควรตรวจก่อนขึ้นระบบจริง</b>
-      <ul>
-        <li>มีสาย build ทับซ้อนกันสามชุด (<code>ci.yaml</code> → ECR, <code>build.yml</code> → workflow ภายนอก, <code>dev.yml</code> → Docker Hub) ควรกำหนดให้ชัดว่า environment ไหนใช้สายไหน</li>
-        <li><code>scripts/docker-db.sh</code> ยังมีค่ารหัสผ่านตัวอย่างค้างอยู่ ต้องเปลี่ยนก่อนใช้กับฐานข้อมูลจริง</li>
-      </ul>
-    </div>
-
-    <div class="gal-head" id="dep-config"><h3>ตัวแปรสภาพแวดล้อมที่สำคัญ</h3><span>ค่าที่ทำเครื่องหมาย “จำเป็น” ถ้าไม่ตั้ง ระบบจะไม่สตาร์ท</span></div>
-    <div class="tbl-wrap">
-      <table class="cmp">
-        <thead><tr><th>ตัวแปร</th><th>โปรเจกต์</th><th>จำเป็น</th><th>คำอธิบาย</th></tr></thead>
-        <tbody>
-          <tr class="ca"><td class="mono">NAME · PORT · CORS</td><td>API</td><td>PORT · CORS</td><td>ชื่อเซอร์วิสที่ใช้เป็นส่วนหนึ่งของ path · พอร์ต · รายการ origin ที่อนุญาต</td></tr>
-          <tr class="ca"><td class="mono">ENV · LOG_LEVEL</td><td>API</td><td>—</td><td><code>LOCAL</code> / <code>DEV</code> / <code>UAT</code> / <code>PROD</code> · ระดับ log</td></tr>
-          <tr class="ca"><td class="mono">DATABASE_URL</td><td>API</td><td>จำเป็น</td><td>สตริงเชื่อม PostgreSQL</td></tr>
-          <tr class="ca"><td class="mono">HASH_PEPPER · JWT_SECRET</td><td>API</td><td>จำเป็น</td><td>pepper สำหรับแฮช API token และ secret ของ JWT</td></tr>
-          <tr class="ca"><td class="mono">JWT_DURATION</td><td>API</td><td>—</td><td>อายุ token ค่าเริ่มต้น <code>24h</code></td></tr>
-          <tr class="ca"><td class="mono">SERVICE_NAME_ID</td><td>API</td><td>จำเป็น</td><td>รหัสเซอร์วิส ใช้เป็น namespace ของ key ใน Redis</td></tr>
-          <tr class="ca"><td class="mono">LAOIT_PGW_URL</td><td>API</td><td>จำเป็น</td><td>ปลายทางของ gateway (ชี้ไป WireMock ตอนพัฒนา)</td></tr>
-          <tr class="ca"><td class="mono">HTTPSIG_KEY_ID · ALGORITHM · TAG · PRIVATE_KEY</td><td>API</td><td>จำเป็น</td><td>กุญแจและพารามิเตอร์สำหรับเซ็นคำขอขาออก</td></tr>
-          <tr class="ca"><td class="mono">HTTPSIG_VERIFY_KEY_ID · TAG · PUBLIC_KEY</td><td>API</td><td>จำเป็น</td><td>กุญแจสาธารณะของ gateway สำหรับตรวจ webhook</td></tr>
-          <tr class="ca"><td class="mono">AWS_REGION · SQS_QUEUE_URL</td><td>API</td><td>จำเป็น</td><td>ภูมิภาคและคิว SQS ปลายทาง</td></tr>
-          <tr class="ca"><td class="mono">SQS_LOCALSTACK_ENABLED</td><td>API</td><td>—</td><td>ถ้า <code>true</code> จะข้ามการตรวจสิทธิ์เข้าถึงคิวตอนสตาร์ท</td></tr>
-          <tr class="ca"><td class="mono">REDIS_ENABLED · ADDRS · PASSWORD · DB · TLS_ENABLED · DIAL_TIMEOUT</td><td>API</td><td>—</td><td>ค่าเชื่อม Redis · ถ้าปิดหรือ ping ไม่ผ่าน ตัวเลือกบัญชีจะใช้ SQL</td></tr>
-          <tr class="ca"><td class="mono">ENABLE_SWAGGER_DOCS · SWAGGER_*</td><td>API</td><td>—</td><td>เปิดหน้า Swagger และค่าที่แสดงในเอกสาร</td></tr>
-          <tr class="ca"><td class="mono">DEVMODE_ENABLED · DEVMODE_AUTO_WEBHOOK_*</td><td>API</td><td>—</td><td>โหมดพัฒนา ยิง webhook กลับเข้าตัวเองเพื่อทดสอบ ไม่ควรเปิดบน production</td></tr>
-          <tr class="cw"><td class="mono">API_BASE_URL</td><td>Web</td><td>จำเป็น</td><td>ปลายทาง API — เป็นตัวแปรฝั่งเซิร์ฟเวอร์เท่านั้น ไม่มี <code>NEXT_PUBLIC_</code></td></tr>
-          <tr class="cw"><td class="mono">ENABLE_API_LOGGING · NEXT_PUBLIC_ENABLE_API_LOGGING</td><td>Web</td><td>—</td><td>เปิด log การเรียก API ฝั่งเซิร์ฟเวอร์และฝั่ง client</td></tr>
-          <tr class="cw"><td class="mono">NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS</td><td>Web</td><td>—</td><td>แสดงปุ่มเติมบัญชีทดลองบนหน้าเข้าสู่ระบบ ควรปิดบน production</td></tr>
-          <tr class="cw"><td class="mono">SKIP_ENV_VALIDATION</td><td>Web</td><td>—</td><td>ข้ามการตรวจ env ใช้เฉพาะตอน build image</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="pre-cap">ตัวอย่างการเปิด dependency และรันระบบบนเครื่องพัฒนา</p>
-    <pre><code># ฝั่ง API
-cp .env.example .env &amp;&amp; direnv allow
-make up                      # postgres + redis + localstack + wiremock
-make migrate-up &amp;&amp; make seed
-go run cmd/api/main.go       # :8080  Internal API + Swagger
-go run cmd/laoitapi/main.go  # ตัวรับ webhook
-go run cmd/sqs/main.go       # consumer อ่านคิว (ถ้าต้องการ)
-
-# ฝั่งเว็บ
-bun install
-bun dev                      # :4000</code></pre>
-  </div>
 </section>
 
 <footer>
