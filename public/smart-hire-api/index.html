@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Hire AI Overview</title>
+<meta name="description" content="เอกสารนำเสนอระบบ Smart Hire AI: เว็บ Next.js ฟูลสแตก (tRPC + Prisma + PostgreSQL) สำหรับสร้างแบบสัมภาษณ์ออนไลน์ ให้ผู้สมัครตอบผ่านลิงก์ และให้ OpenAI ประเมินคะแนนตามเกณฑ์อัตโนมัติ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5fb;--surface:#ffffff;--surface-2:#efecf7;--text:#1c1730;--muted:#5f5878;--line:#e2ddee;
+  --brand:#5b21b6;--brand-soft:#ede6fc;--accent:#7c3aed;
+  --gw:#0ea5a4;--gw-soft:#dff6f5;--api:#d946a0;--api-soft:#fce4f2;--web:#7c3aed;--web-soft:#ede6fc;
+  --ov:#e0761b;--ov-soft:#fdeedd;
+  --cf:#e7862b;--cf-soft:#fdeedd;
+  --prod:#b91c1c;--prod-soft:#fde4e4;--line-2:#cdc6de;--ok:#16a34a;
+  --shadow:0 1px 2px rgba(28,23,48,.06),0 8px 24px rgba(28,23,48,.07);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#120d1e;--surface:#1b1430;--surface-2:#241b3f;--text:#ece8f7;--muted:#a49bc0;--line:#2f2450;
+    --brand:#c4b5fd;--brand-soft:#2a2050;--accent:#a78bfa;
+    --gw:#2dd4bf;--gw-soft:#123332;--api:#f472b6;--api-soft:#3d1830;--web:#b28bff;--web-soft:#2a1f45;
+    --ov:#f0a05a;--ov-soft:#3d2a16;
+    --cf:#f0a05a;--cf-soft:#3d2a16;
+    --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3f3263;--ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#120d1e;--surface:#1b1430;--surface-2:#241b3f;--text:#ece8f7;--muted:#a49bc0;--line:#2f2450;
+  --brand:#c4b5fd;--brand-soft:#2a2050;--accent:#a78bfa;
+  --gw:#2dd4bf;--gw-soft:#123332;--api:#f472b6;--api-soft:#3d1830;--web:#b28bff;--web-soft:#2a1f45;
+  --ov:#f0a05a;--ov-soft:#3d2a16;
+  --cf:#f0a05a;--cf-soft:#3d2a16;
+  --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3f3263;--ok:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:8px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);margin-right:auto;white-space:nowrap}
+.logo span{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--api),var(--web));color:#fff;font-size:13px;letter-spacing:.5px}
+.nav a.link{color:var(--muted);font-weight:500;padding:6px 10px;border-radius:8px;font-size:.95rem;white-space:nowrap}
+.nav a.link:hover{background:var(--surface-2);color:var(--text)}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:16px;flex:none}
+
+/* hero */
+.hero{padding:64px 0 40px}
+.hero h1{font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{font-size:1.15rem;color:var(--muted);max-width:820px;margin:0 0 28px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:.92rem;color:var(--text);box-shadow:var(--shadow)}
+.pill i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pill.a i{background:var(--api)}.pill.w i{background:var(--web)}.pill.g i{background:var(--gw)}.pill.o i{background:var(--ov)}.pill.d i{background:var(--brand)}
+
+/* architecture */
+.arch{margin:8px 0 56px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);overflow-x:auto}
+.arch h2{margin:0 0 6px;font-size:1.25rem}
+.arch p{margin:0 0 18px;color:var(--muted)}
+.arch svg{width:100%;min-width:860px;height:auto;display:block}
+.arch text{font-family:"Noto Sans Thai",system-ui,sans-serif}
+
+/* section */
+.section{padding:48px 0;border-top:1px solid var(--line)}
+.section-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;margin-bottom:28px}
+.section-head .tag{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:6px;margin-bottom:8px}
+.section-head h2{margin:0;font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.01em}
+.section-head p{margin:4px 0 0;color:var(--muted);max-width:860px}
+.api .tag{background:var(--api-soft);color:var(--api)}
+.web .tag{background:var(--web-soft);color:var(--web)}
+.gw .tag{background:var(--gw-soft);color:var(--gw)}
+.ov .tag{background:var(--ov-soft);color:var(--ov)}
+
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:36px}
+.grid3.two{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.card h3 .ic{width:28px;height:28px;border-radius:8px;display:inline-grid;place-items:center;font-size:14px;flex:none}
+.api .card h3 .ic{background:var(--api-soft);color:var(--api)}
+.web .card h3 .ic{background:var(--web-soft);color:var(--web)}
+.gw .card h3 .ic{background:var(--gw-soft);color:var(--gw)}
+.ov .card h3 .ic{background:var(--ov-soft);color:var(--ov)}
+.tech{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tech li{background:var(--surface-2);border:1px solid var(--line);padding:5px 11px;border-radius:8px;font-size:.88rem;font-weight:500}
+.tech li b{font-weight:700}
+.svc{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.svc li{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.svc .sic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:17px}
+.svc b{display:block;font-size:.95rem}
+.svc span{color:var(--muted);font-size:.88rem;line-height:1.5}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.feat li{position:relative;padding-left:24px;font-size:.95rem}
+.feat li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px}
+.api .feat li::before{background:var(--api)}
+.web .feat li::before{background:var(--web)}
+.gw .feat li::before{background:var(--gw)}
+.ov .feat li::before{background:var(--ov)}
+.deploy .feat li::before{background:var(--brand)}
+
+/* gallery */
+.gal-head{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.gal-head h3{margin:0;font-size:1.2rem}
+.gal-head span{color:var(--muted);font-size:.9rem}
+.shots{display:grid;gap:16px;margin-bottom:32px}
+.shots.screens{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.shot{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:zoom-in;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+.shot:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(28,23,48,.18)}
+.shot .img{background:var(--surface-2);position:relative;overflow:hidden}
+.screens .shot .img{aspect-ratio:1649/1323}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot figcaption{padding:10px 12px;font-size:.85rem;line-height:1.4}
+.shot figcaption small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+.shot .n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:6px;font-size:.72rem;font-weight:700;margin-right:6px;vertical-align:middle}
+.web .shot .n{background:var(--web-soft);color:var(--web)}
+.api .shot .n{background:var(--api-soft);color:var(--api)}
+.ov .shot .n{background:var(--ov-soft);color:var(--ov)}
+.gw .shot .n{background:var(--gw-soft);color:var(--gw)}
+.shot .long{position:absolute;right:8px;top:8px;background:rgba(20,14,40,.72);color:#fff;font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:999px}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(10,6,20,.93);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
+.lb.open{display:flex}
+.lb .frame{max-width:100%;max-height:calc(100vh - 110px);overflow:auto;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lb img{display:block;max-width:min(1200px,100%);height:auto}
+.lb .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;color:#ece8f7;font-size:.95rem;padding:0 60px}
+.lb button{position:absolute;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:20px;display:grid;place-items:center;z-index:2}
+.lb button:hover{background:rgba(255,255,255,.22)}
+.lb .x{top:18px;right:18px}.lb .p{left:18px;top:50%;transform:translateY(-50%)}.lb .nx{right:18px;top:50%;transform:translateY(-50%)}
+
+/* deploy */
+.deploy .section-head .tag{background:var(--brand-soft);color:var(--brand)}
+.deploy .card h3 .ic{background:var(--brand-soft);color:var(--brand)}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 24px}
+.subnav a{font-size:.85rem;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.subnav a:hover{color:var(--text);border-color:var(--line-2)}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.steps li{font-size:.95rem}
+.steps li small{color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:8px 0 0;max-width:900px}
+p code,li code,td code{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+
+/* diagram blocks */
+.darch{margin:0 0 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);overflow-x:auto}
+.ov .darch{border-color:var(--ov)} .gw .darch{border-color:var(--gw)} .deploy .darch{border-color:var(--brand)}
+.darch h3{margin:0 0 4px;font-size:1.15rem}
+.ov .darch h3{color:var(--ov)} .gw .darch h3{color:var(--gw)}
+.darch p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
+.darch svg{width:100%;min-width:860px;height:auto;display:block;font-family:"Noto Sans Thai",system-ui,sans-serif}
+.darch .box{fill:var(--surface);stroke:var(--line-2);stroke-width:1.5}
+.darch .box.w{fill:var(--web-soft);stroke:var(--web)}
+.darch .box.a{fill:var(--api-soft);stroke:var(--api)}
+.darch .box.g{fill:var(--gw-soft);stroke:var(--gw)}
+.darch .box.o{fill:var(--ov-soft);stroke:var(--ov)}
+.darch .box.d{fill:var(--surface-2);stroke:var(--line-2)}
+.darch .lbl{fill:var(--text);font-size:13px;font-weight:700}
+.darch .sub{fill:var(--muted);font-size:10.5px}
+.darch .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+.darch .edge.in{stroke:var(--gw)}
+.darch .edge.out{stroke:var(--ov);stroke-dasharray:5 3}
+.darch .edge.ext{stroke:var(--muted);stroke-dasharray:5 4}
+.darch .elbl{fill:var(--muted);font-size:10.5px}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:.85rem;color:var(--muted)}
+.legend-row span::before{content:"";display:inline-block;width:22px;height:0;border-top:2px solid var(--muted);margin-right:6px;vertical-align:middle}
+.legend-row .in::before{border-color:var(--gw)}
+.legend-row .out::before{border-color:var(--ov);border-top-style:dashed}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);margin-bottom:24px}
+.cmp{width:100%;border-collapse:collapse;font-size:.9rem}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{color:var(--muted);font-weight:600;font-size:.8rem;background:var(--surface-2);white-space:nowrap}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.cmp td.mono{font-family:"JetBrains Mono",monospace;font-size:.82rem}
+.cmp .ca{border-left:3px solid var(--api)} .cmp .cw{border-left:3px solid var(--web)}
+.cmp .cg{border-left:3px solid var(--gw)} .cmp .co{border-left:3px solid var(--ov)}
+.role{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.role.adm{background:var(--prod-soft);color:var(--prod);border-color:var(--prod)}
+.role.pub{background:var(--gw-soft);color:var(--gw);border-color:var(--gw)}
+
+.note{background:var(--brand-soft);border:1px solid var(--brand);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px}
+.note b.h{display:block;margin-bottom:8px;color:var(--brand)}
+.note ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.95rem}
+.note.warn{background:var(--cf-soft);border-color:var(--cf)} .note.warn b.h{color:var(--cf)}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 36px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:1.5rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.85rem}
+@media (max-width:640px){.hero{padding:40px 0 28px}.section{padding:36px 0}.shots.screens{grid-template-columns:1fr}.grid3.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top"><span>SH</span>Smart Hire AI</a>
+    <div class="nav-links">
+      <a class="link" href="#architecture">สถาปัตยกรรม</a>
+      <a class="link" href="#api">Backend (tRPC)</a>
+      <a class="link" href="#web">Admin Web</a>
+      <a class="link" href="#candidate">ฟอร์มผู้สมัคร</a>
+      <a class="link" href="#ai">AI Scoring</a>
+      <a class="link" href="#deploy">Deploy / CI-CD</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="สลับธีม" aria-label="สลับธีม">◐</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1>Smart Hire AI <em>สัมภาษณ์งานออนไลน์ ให้ AI ช่วยคัดกรอง</em></h1>
+    <p class="lead">ระบบสัมภาษณ์ผู้สมัครงานแบบอัตโนมัติของ <b>Metanet Corporation</b> ผู้ดูแลสร้าง “ลิงก์สัมภาษณ์” ที่มีคำถามได้ 8 ประเภท ทั้งข้อความ ตัวเลือก อัปโหลด Resume อัดวิดีโอแนะนำตัว และแบบทดสอบบุคลิกภาพ DISC ผู้สมัครเปิดลิงก์แล้วตอบทีละข้อภายในเวลาที่กำหนด โดยไม่ต้องสมัครสมาชิก จากนั้น <b>OpenAI</b> จะให้คะแนนแต่ละคำตอบตามเกณฑ์ที่ผู้ดูแลตั้งไว้ ถอดเสียงวิดีโอ และวิเคราะห์การแต่งกาย ทั้งหมดอยู่ในเว็บ <b>Next.js</b> ฟูลสแตกโปรเจกต์เดียว ที่ใช้ tRPC + Prisma + PostgreSQL</p>
+    <div class="pills">
+      <span class="pill w"><i></i>smart-hire-ai · Next.js 16 App Router + React 19</span>
+      <a class="pill a" href="#api"><i></i>tRPC 11 · Prisma 7 · PostgreSQL 16</a>
+      <a class="pill g" href="#ai"><i></i>OpenAI · gpt-4o-mini · gpt-4o · whisper-1</a>
+      <a class="pill o" href="#candidate"><i></i>UploadThing · Resume / วิดีโอ</a>
+      <a class="pill d" href="#deploy"><i></i>Deploy · Docker · GitHub Actions (self-hosted)</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>1</b><span>โปรเจกต์ Next.js ฟูลสแตก (สร้างจาก create-t3-app)</span></div>
+    <div class="stat"><b>100</b><span>tRPC procedure ใน 15 router</span></div>
+    <div class="stat"><b>18</b><span>โมเดลข้อมูล (Prisma + PostgreSQL)</span></div>
+    <div class="stat"><b>8</b><span>ประเภทคำถามในฟอร์มสัมภาษณ์</span></div>
+    <div class="stat"><b>5</b><span>ฟังก์ชัน AI ที่เรียก OpenAI</span></div>
+    <div class="stat"><b>3</b><span>บทบาท: USER · ADMIN · SUPER_ADMIN</span></div>
+  </div>
+
+  <section class="arch" id="architecture">
+    <h2>สถาปัตยกรรมระบบ</h2>
+    <p>ทั้งหน้าเว็บและ API อยู่ใน Next.js แอปเดียว ฝั่งเบราว์เซอร์คุยกับเซิร์ฟเวอร์ผ่าน <b>tRPC</b> ที่ <code>/api/trpc</code> (ใช้ superjson + React Query) ส่วนไฟล์ขนาดใหญ่อย่าง Resume และวิดีโออัปโหลดผ่าน <b>Server Action</b> ขึ้น UploadThing · ผู้ดูแลเข้าสู่ระบบด้วย Google ผ่าน NextAuth ส่วนผู้สมัครเปิดลิงก์ <code>/form/[id]</code> ได้เลยโดยไม่ต้องล็อกอิน · การให้คะแนนด้วย AI รันเบื้องหลังหลังบันทึกคำตอบแต่ละข้อ</p>
+    <svg viewBox="0 0 1100 520" role="img" aria-label="แผนภาพสถาปัตยกรรม Smart Hire AI">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+        <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--gw)"/></marker>
+        <marker id="aro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ov)"/></marker>
+      </defs>
+
+      <rect x="40" y="26" width="300" height="96" rx="14" fill="var(--web-soft)" stroke="var(--web)" stroke-width="2"/>
+      <text x="190" y="58" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">ผู้ดูแล / HR</text>
+      <text x="190" y="80" text-anchor="middle" font-size="12.5" fill="var(--muted)">สร้างฟอร์ม · ตั้งเกณฑ์ · ดูผลคะแนน</text>
+      <text x="190" y="100" text-anchor="middle" font-size="12.5" fill="var(--muted)">เข้าสู่ระบบด้วย Google</text>
+
+      <rect x="40" y="168" width="300" height="118" rx="14" fill="var(--ov-soft)" stroke="var(--ov)" stroke-width="2"/>
+      <text x="190" y="198" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">ผู้สมัครงาน</text>
+      <text x="190" y="220" text-anchor="middle" font-size="12.5" fill="var(--muted)">เปิดลิงก์ <tspan font-family="JetBrains Mono, monospace">/form/[formId]</tspan></text>
+      <text x="190" y="240" text-anchor="middle" font-size="12.5" fill="var(--muted)">ตอบทีละข้อพร้อมนับถอยหลัง</text>
+      <text x="190" y="260" text-anchor="middle" font-size="12.5" fill="var(--muted)">อัปโหลด Resume · อัดวิดีโอ · DISC</text>
+      <text x="190" y="278" text-anchor="middle" font-size="11" fill="var(--muted)">ไม่ต้องล็อกอิน · จำความคืบหน้าใน localStorage</text>
+
+      <rect x="400" y="26" width="300" height="336" rx="14" fill="var(--api-soft)" stroke="var(--api)" stroke-width="2"/>
+      <text x="550" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">smart-hire-ai (Next.js 16)</text>
+      <text x="550" y="76" text-anchor="middle" font-size="12" fill="var(--muted)">App Router · React 19 · Bootstrap + SCSS</text>
+      <rect x="420" y="92" width="260" height="44" rx="9" fill="var(--surface)" stroke="var(--web)" stroke-width="1.2"/>
+      <text x="550" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">หน้าเว็บ 9 หน้า</text>
+      <text x="550" y="127" text-anchor="middle" font-size="10" fill="var(--muted)">/admin/* · /form/[slug] · /form/preview · /super-admin</text>
+      <rect x="420" y="146" width="260" height="44" rx="9" fill="var(--surface)" stroke="var(--api)" stroke-width="1.2"/>
+      <text x="550" y="165" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">tRPC /api/trpc — 100 procedure</text>
+      <text x="550" y="181" text-anchor="middle" font-size="10" fill="var(--muted)">15 router · protected 44 · public 56</text>
+      <rect x="420" y="200" width="260" height="44" rx="9" fill="var(--surface)" stroke="var(--ov)" stroke-width="1.2"/>
+      <text x="550" y="219" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">Server Actions + /api/uploadthing</text>
+      <text x="550" y="235" text-anchor="middle" font-size="10" fill="var(--muted)">อัปโหลดไฟล์คำตอบและสื่อประกอบคำถาม (สูงสุด 1GB)</text>
+      <rect x="420" y="254" width="260" height="44" rx="9" fill="var(--surface)" stroke="var(--gw)" stroke-width="1.2"/>
+      <text x="550" y="273" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">chatGPTService</text>
+      <text x="550" y="289" text-anchor="middle" font-size="10" fill="var(--muted)">ให้คะแนน · สร้างคำถาม · DISC · แต่งกาย · ถอดเสียง</text>
+      <rect x="420" y="308" width="260" height="40" rx="9" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.2"/>
+      <text x="550" y="325" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">NextAuth v4 (Google)</text>
+      <text x="550" y="340" text-anchor="middle" font-size="10" fill="var(--muted)">session เก็บในฐานข้อมูล · /api/auth/*</text>
+
+      <rect x="760" y="120" width="300" height="118" rx="14" fill="var(--gw-soft)" stroke="var(--gw)" stroke-width="2"/>
+      <text x="910" y="152" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">OpenAI API</text>
+      <text x="910" y="174" text-anchor="middle" font-size="12.5" fill="var(--muted)">gpt-4o-mini — ให้คะแนน · สร้างคำถาม · vision</text>
+      <text x="910" y="194" text-anchor="middle" font-size="12.5" fill="var(--muted)">gpt-4o — วิเคราะห์ DISC</text>
+      <text x="910" y="214" text-anchor="middle" font-size="12.5" fill="var(--muted)">whisper-1 — ถอดเสียงภาษาไทย</text>
+
+      <rect x="200" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="295" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">PostgreSQL 16</text>
+      <text x="295" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">Prisma 7 + adapter-pg · 18 โมเดล</text>
+
+      <rect x="410" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="505" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">UploadThing</text>
+      <text x="505" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">Resume · Portfolio · วิดีโอ .webm</text>
+
+      <rect x="620" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="715" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">Google OAuth</text>
+      <text x="715" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">เฉพาะอีเมลที่ลงทะเบียนไว้</text>
+
+      <rect x="830" y="410" width="190" height="64" rx="11" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+      <text x="925" y="436" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">YouTube embed</text>
+      <text x="925" y="455" text-anchor="middle" font-size="10.5" fill="var(--muted)">สื่อประกอบคำถาม</text>
+
+      <path d="M340 74 L395 74" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+      <text x="367" y="66" text-anchor="middle" font-size="10.5" fill="var(--muted)">tRPC</text>
+      <path d="M340 227 L395 227" stroke="var(--ov)" stroke-width="1.6" fill="none" marker-end="url(#aro)"/>
+      <text x="367" y="219" text-anchor="middle" font-size="10.5" fill="var(--ov)">คำตอบ</text>
+      <path d="M700 172 L755 172" stroke="var(--gw)" stroke-width="1.6" fill="none" marker-end="url(#arg)"/>
+      <text x="727" y="164" text-anchor="middle" font-size="10.5" fill="var(--gw)">JSON mode</text>
+      <path d="M755 206 L705 206" stroke="var(--gw)" stroke-width="1.6" stroke-dasharray="5 3" fill="none" marker-end="url(#arg)"/>
+      <text x="730" y="222" text-anchor="middle" font-size="10.5" fill="var(--gw)">score + note</text>
+      <path d="M550 362 L550 390 M295 390 L925 390 M295 390 L295 405 M505 390 L505 405 M715 390 L715 405 M925 390 L925 405" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4" fill="none"/>
+    </svg>
+  </section>
+</div>
+
+<!-- ===================== BACKEND ===================== -->
+<section class="section api" id="api">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Backend · tRPC + Prisma (อยู่ใน Next.js)</span>
+        <h2>ชั้นข้อมูลและ API</h2>
+        <p>ไม่มีเซอร์วิส backend แยก ตรรกะฝั่งเซิร์ฟเวอร์ทั้งหมดอยู่ใต้ <code>src/server/</code> ใช้ tRPC 11 ทำ API แบบ type-safe ตั้งแต่ฐานข้อมูลจนถึงหน้า React ตรวจอินพุตด้วย Zod และแปลงข้อมูลด้วย superjson มี route handler แบบปกติเพียง 4 ตัว สำหรับ NextAuth, tRPC และ UploadThing</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Node.js</b> 24 (≥20.9)</li>
+          <li><b>Next.js</b> 16.3 (Turbopack)</li>
+          <li><b>TypeScript</b> 5.9 strict</li>
+          <li><b>tRPC</b> 11.19</li>
+          <li><b>Prisma</b> 7.10 + adapter-pg</li>
+          <li><b>PostgreSQL</b> 16</li>
+          <li>TanStack React Query 5</li>
+          <li>Zod 3.25 · superjson</li>
+          <li>NextAuth 4.24 + PrismaAdapter</li>
+          <li>openai 4.65 · axios</li>
+          <li>uploadthing 7.7</li>
+          <li>@t3-oss/env-nextjs (ตรวจ env)</li>
+          <li>prisma-dbml-generator</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL 16</b><span>ผ่าน Prisma 7 ที่ใช้ driver adapter <code>PrismaPg</code> (<code>src/server/db.ts</code>) · มี migration 22 ชุด และสร้างไฟล์ <code>prisma/dbml/schema.dbml</code> ให้อัตโนมัติ</span></div></li>
+          <li><span class="sic">🤖</span><div><b>OpenAI</b><span>ใช้ key สองตัว: <code>OPENAI_API_KEY</code> สำหรับงานข้อความ/เสียง และ <code>OPENAI_API_KEY_IMAGE_UPLOAD</code> สำหรับวิเคราะห์ภาพ</span></div></li>
+          <li><span class="sic">📁</span><div><b>UploadThing</b><span>เก็บไฟล์คำตอบของผู้สมัครและสื่อประกอบคำถาม เรียกผ่าน <code>UTApi</code> ฝั่งเซิร์ฟเวอร์ แล้วบันทึก URL ลง <code>QuestionAnswer.linkFileAnswer</code></span></div></li>
+          <li><span class="sic">🔑</span><div><b>Google OAuth</b><span>ช่องทางเข้าสู่ระบบเดียวของผู้ดูแล ผ่าน NextAuth v4</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>tRPC router หลัก</h3>
+        <ul class="feat">
+          <li><b>form</b> (11) สร้าง/แก้/ลบฟอร์ม พร้อมคำถามตั้งต้นอัตโนมัติ</li>
+          <li><b>question</b> (10) upsert คำถาม · <code>createWithAi</code> · <code>getRemainingQuestions</code></li>
+          <li><b>questionAnswer</b> (9) บันทึกคำตอบ แล้วสั่ง AI ให้คะแนนเบื้องหลัง · <code>discAnalyze</code> · <code>dressAnalyze</code> · <code>speechToText</code></li>
+          <li><b>formAnswer</b> (7) การส่งแบบฟอร์มของผู้สมัครแต่ละคน และสรุปยอดบนแดชบอร์ด</li>
+          <li><b>scoringCriteria · …Question · …Formula · …AiResult</b> (26) เกณฑ์ประเมิน รูบริก และผลคะแนนจาก AI</li>
+          <li><b>chatGPTConfig · chatGptHistory · transaction · depositRequest</b> อัตราค่า token และประวัติการใช้งาน</li>
+          <li><b>user · userProfile · formViewHistory</b> ผู้ใช้และบัญชีผู้ดูแล</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <h3><span class="ic">🔐</span>การยืนยันตัวตนและสิทธิ์</h3>
+        <ul class="feat">
+          <li><b>NextAuth v4 + Google</b> เป็น provider เดียว session เก็บในตาราง <code>Session</code> ผ่าน PrismaAdapter</li>
+          <li>callback <code>signIn</code> อนุญาตเฉพาะอีเมลที่มี <code>UserProfile</code> อยู่แล้ว — ผู้ดูแลต้องถูกเพิ่มผ่าน seed หรือหน้า <code>/super-admin</code> ก่อน</li>
+          <li>ตอนล็อกอิน <code>profile()</code> คัดลอก <code>role</code> · <code>profileName</code> · <code>profileId</code> จาก UserProfile มาไว้ใน session</li>
+          <li><code>src/app/admin/layout.tsx</code> ส่งไป <code>/admin/login</code> เมื่อไม่มี session · <code>/super-admin</code> ตรวจ role <span class="role adm">SUPER_ADMIN</span> เอง</li>
+          <li>tRPC แยก <code>protectedProcedure</code> (โยน <code>UNAUTHORIZED</code> เมื่อไม่มี session) กับ <code>publicProcedure</code> สำหรับหน้าผู้สมัคร</li>
+          <li>3 บทบาท: <span class="role">USER</span> <span class="role adm">ADMIN</span> <span class="role adm">SUPER_ADMIN</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🗄</span>โมเดลข้อมูล (18 ตาราง · 5 enum)</h3>
+        <ul class="feat">
+          <li><b>UserProfile</b> บัญชีผู้ดูแล (บริษัท เครดิต พื้นที่ที่ใช้) ผูกกับ <b>User / Account / Session</b> ของ NextAuth</li>
+          <li><b>Form</b> → <b>Question</b> (ลำดับ ประเภท สื่อ เวลา การอนุญาต copy/paste จำนวนและขนาดไฟล์)</li>
+          <li><b>FormAnswer</b> การส่งหนึ่งครั้งของผู้สมัคร → <b>QuestionAnswer</b> (คำตอบ ลิงก์ไฟล์ เวลาที่ใช้ หมดเวลาหรือไม่ บันทึกจาก AI ผลวิเคราะห์การแต่งกาย คะแนน D/I/S/C)</li>
+          <li><b>ScoringCriteria</b> → <b>ScoringCriteriaQuestion</b> → <b>Formula</b> (คะแนน ↔ คำอธิบาย) และ <b>AiResult</b> (score + note)</li>
+          <li><b>ChatGPTConfig</b> · <b>ChatGptHistory</b> · <b>ChatGptUse</b> · <b>Transaction</b> · <b>DepositRequest</b> สำหรับคิดค่า token และเครดิต</li>
+          <li>ประเภทคำถาม: <code>READ_ONLY</code> · <code>PARAGRAPH</code> · <code>MULTIPLE_CHOICE</code> · <code>FILE_UPLOAD</code> · <code>RESUME</code> · <code>VIDEO_RECORD</code> · <code>DISC</code> · <code>TEST_SUCCESS</code></li>
+          <li>ประเภทสื่อ: <code>TEXT</code> · <code>IMAGE</code> · <code>YOUTUBE</code> · <code>VIDEO</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>Route handler และ procedure สำคัญ</h3><span>tRPC ทั้งหมด 100 procedure — ตารางนี้เลือกเฉพาะเส้นที่ขับเคลื่อน flow หลัก</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>กลุ่ม</th><th>Endpoint / Procedure</th><th>สิทธิ์</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td>route handler</td><td class="mono">GET · POST /api/auth/[...nextauth]</td><td><span class="role pub">public</span></td><td>NextAuth — Google sign-in และ session</td></tr>
+          <tr><td></td><td class="mono">GET · POST /api/trpc/[trpc]</td><td><span class="role">ต่อ procedure</span></td><td>ทางเข้า tRPC ทั้งหมด (fetch adapter)</td></tr>
+          <tr><td></td><td class="mono">GET · POST /api/uploadthing</td><td><span class="role pub">public</span></td><td>FileRouter <code>mediaPost</code>: รูป 32MB×4 · วิดีโอ 1GB×1 · PDF 32MB×1</td></tr>
+          <tr><td></td><td class="mono">POST /api/uploadthing/user</td><td><span class="role">session</span></td><td>อัปโหลดสื่อประกอบคำถามจากหน้าสร้างฟอร์ม</td></tr>
+
+          <tr class="cw"><td>form</td><td class="mono">form.create</td><td><span class="role">session</span></td><td>สร้างฟอร์ม พร้อมคำถาม “ชื่อ-นามสกุล” และหน้าขอบคุณ (TEST_SUCCESS) ให้อัตโนมัติ</td></tr>
+          <tr><td></td><td class="mono">formAnswer.getSummaryDashboard</td><td><span class="role">session</span></td><td>จำนวนคำตอบ วันนี้ · สัปดาห์นี้ · เดือนนี้ · ทั้งหมด</td></tr>
+          <tr><td></td><td class="mono">formAnswer.getById</td><td><span class="role">session</span></td><td>คำตอบของผู้สมัครหนึ่งคน พร้อมผลคะแนนแยกตามเกณฑ์</td></tr>
+
+          <tr class="cw"><td>question</td><td class="mono">question.upsert</td><td><span class="role">session</span></td><td>บันทึกคำถามทั้งฟอร์มจากหน้า builder</td></tr>
+          <tr><td></td><td class="mono">question.createWithAi</td><td><span class="role">session</span></td><td>ให้ GPT สร้างคำถามใหม่ + รูบริกให้คะแนน และบันทึก token ลง <code>ChatGptUse</code></td></tr>
+          <tr><td></td><td class="mono">question.getRemainingQuestions</td><td><span class="role pub">public</span></td><td>คำถามที่ผู้สมัครยังไม่ได้ตอบ เรียงตาม <code>order</code></td></tr>
+
+          <tr class="co"><td>questionAnswer</td><td class="mono">questionAnswer.create</td><td><span class="role pub">public</span></td><td>บันทึกคำตอบ แล้วสั่ง <code>scoringByChatGPT</code> แบบไม่รอผล</td></tr>
+          <tr><td></td><td class="mono">questionAnswer.discAnalyze · updateDiscScore</td><td><span class="role">session</span></td><td>วิเคราะห์ผล DISC ด้วย gpt-4o และบันทึกคะแนน D/I/S/C</td></tr>
+          <tr><td></td><td class="mono">questionAnswer.dressAnalyze</td><td><span class="role">session</span></td><td>ส่งภาพเฟรมจากวิดีโอให้ gpt-4o-mini วิเคราะห์การแต่งกาย</td></tr>
+          <tr><td></td><td class="mono">questionAnswer.speechToText</td><td><span class="role">session</span></td><td>ถอดเสียงวิดีโอด้วย whisper-1 (ภาษาไทย)</td></tr>
+
+          <tr class="cg"><td>scoring</td><td class="mono">scoringCriteria.* · scoringCriteriaFormula.*</td><td><span class="role">session</span></td><td>ตั้งเกณฑ์ (เช่น นิสัย · ประสบการณ์) และรูบริก “คะแนน → คำอธิบาย” ต่อคำถาม</td></tr>
+          <tr><td></td><td class="mono">scoringCriteriaAiResult.*</td><td><span class="role">session</span></td><td>ผลคะแนนและเหตุผลที่ AI ให้ ต่อผู้สมัคร ต่อเกณฑ์</td></tr>
+
+          <tr class="ca"><td>server action</td><td class="mono">actionUploadFileToUploadthing</td><td><span class="role pub">public</span></td><td>อัปโหลดไฟล์คำตอบ (FILE_UPLOAD) แล้วสร้าง QuestionAnswer</td></tr>
+          <tr><td></td><td class="mono">actionUploadFile</td><td><span class="role pub">public</span></td><td>แนบไฟล์ PDF / วิดีโอ .webm ให้คำตอบที่มีอยู่</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ADMIN WEB ===================== -->
+<section class="section web" id="web">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Frontend · ฝั่งผู้ดูแล</span>
+        <h2>หน้าผู้ดูแล — สร้างฟอร์มและตรวจผล</h2>
+        <p>ผู้ดูแลเข้าสู่ระบบด้วย Google แล้วเข้าหน้า <code>/admin/interview</code> เพื่อดูสรุปยอดและรายการลิงก์สัมภาษณ์ สร้างฟอร์มใหม่ได้จากปุ่ม “สร้างฟอร์ม” จากนั้นจะเข้าหน้า builder <code>/admin/form-management2/[formId]</code> ที่มีสองแท็บ คือ <b>Question</b> สำหรับออกแบบคำถามและเกณฑ์ และ <b>Responses</b> สำหรับดูคำตอบและส่งออกเป็น Excel</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">🎨</span>UI</h3>
+        <ul class="tech">
+          <li><b>React</b> 19.3</li>
+          <li><b>Bootstrap</b> 5.3 + react-bootstrap</li>
+          <li><b>SCSS</b> (สไตล์หลัก)</li>
+          <li>Tailwind CSS 4 (ไม่มี Preflight)</li>
+          <li>TanStack Table 8</li>
+          <li>xlsx (ส่งออก Excel)</li>
+          <li>react-drag-drop-files</li>
+          <li>react-pdftotext</li>
+          <li>lucide-react · react-tooltip</li>
+          <li>dayjs · lodash</li>
+          <li>IBM Plex Sans Thai (next/font)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧭</span>หน้าเว็บ (9 หน้า)</h3>
+        <ul class="svc">
+          <li><span class="sic">🔐</span><div><b>/ · /admin/login</b><span>หน้า Sign-in with Google · ถ้าล็อกอินแล้วจะไปที่ <code>/admin/interview</code></span></div></li>
+          <li><span class="sic">📊</span><div><b>/admin/interview</b><span>การ์ดสรุปยอดคำตอบ และตารางลิงก์สัมภาษณ์ (สร้าง · เปลี่ยนชื่อ · ลบ)</span></div></li>
+          <li><span class="sic">🛠</span><div><b>/admin/form-management2/[formId]</b><span>builder คำถาม เกณฑ์ประเมิน ลิงก์สาธารณะ พรีวิว และแท็บ Responses</span></div></li>
+          <li><span class="sic">🧾</span><div><b>/admin/form-detail/[formAnswerId]</b><span>คำตอบของผู้สมัครหนึ่งคน พร้อมคะแนนและเหตุผลจาก AI</span></div></li>
+          <li><span class="sic">👑</span><div><b>/super-admin · /admin/top-up-credit</b><span>จัดการบัญชีผู้ดูแล (เฉพาะ SUPER_ADMIN) · ข้อมูลการเติมเครดิต</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>ความสามารถของ builder</h3>
+        <ul class="feat">
+          <li><b>8 ประเภทคำถาม</b> เลือกได้จาก dropdown ต่อการ์ด พร้อมปุ่มเลื่อนขึ้น‑ลง คัดลอก และลบ</li>
+          <li><b>สื่อประกอบ</b> ข้อความ · รูปภาพ · YouTube · วิดีโอ แนบกับคำถามได้ทุกข้อ</li>
+          <li><b>จับเวลา</b> ต่อข้อเป็นวินาที และเลือกได้ว่าจะ “อนุญาต copy/paste” หรือไม่</li>
+          <li><b>อัปโหลดไฟล์</b> กำหนดจำนวนไฟล์สูงสุดและขนาดไฟล์ (เช่น 5 ไฟล์ · 100 MB)</li>
+          <li><b>ประเมินคะแนนด้วย AI</b> เพิ่มเกณฑ์ต่อคำถาม แล้วเขียนรูบริกว่าคะแนน 0 / 1 / 2 หมายถึงอะไร</li>
+          <li><b>สร้างคำถามด้วย AI</b> ให้ GPT เสนอคำถามใหม่ที่ไม่ซ้ำของเดิม พร้อมรูบริก</li>
+          <li><b>ลิงก์และพรีวิว</b> คัดลอกลิงก์ <code>/form/[formId]</code> และเปิด <code>/form/preview/[formId]</code> ที่ไม่บันทึกข้อมูล</li>
+          <li><b>Responses</b> ตารางคำตอบพร้อมคะแนนรวม และส่งออก Excel</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอ — ฝั่งผู้ดูแล</h3><span>7 หน้าจอ · คลิกเพื่อขยาย (ภาพยาวเลื่อนดูในกรอบได้)</span></div>
+    <div class="shots screens" data-group="admin">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-2026-09-23-23_38_54.png" alt=""></div><figcaption><span class="n">1</span>หน้าเข้าสู่ระบบ<small>โลโก้ MetaNet · “gauge the personality of a candidate” · ปุ่ม Sign-in with google ที่เรียก NextAuth</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-accounts-google-v3-signin-accountchooser-2026-09-23-23_39_26.png" alt=""></div><figcaption><span class="n">2</span>เลือกบัญชี Google<small>หน้า OAuth ของ Google · หลังเลือกบัญชี ระบบเช็กว่าอีเมลมี UserProfile อยู่แล้วจึงให้เข้า</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-admin-interview-2026-09-23-23_41_29.png" alt=""></div><figcaption><span class="n">3</span>แดชบอร์ด Interview<small>การ์ด Today · Total · This week · This month reply และตาราง “ลิงค์สัมภาษณ์ทั้งหมด” พร้อมปุ่มแก้ชื่อ เข้า builder และลบ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-admin-interview-2026-09-23-23_42_02.png" alt=""></div><figcaption><span class="n">4</span>สร้างฟอร์มใหม่<small>โมดัล Create Form ตั้งชื่อตำแหน่งงาน แล้ว <code>form.create</code> จะเพิ่มคำถามตั้งต้นให้ก่อนพาไปหน้า builder</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-admin-form-management2-cmuebzce10003bs4fa9lvq446-2026-09-23-23_42_15.png" alt=""></div><figcaption><span class="n">5</span>Builder — ฟอร์มที่เพิ่งสร้าง<small>คำถาม “ชื่อ-นามสกุล” แบบ Paragraph ที่ถูกเพิ่มให้อัตโนมัติ · ช่องตั้งเวลา · อนุญาต copy/paste · สื่อประกอบ · ปุ่มเพิ่มเกณฑ์การประเมิน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><span class="long">ภาพยาว</span><img loading="lazy" src="capture-web/screencapture-localhost-3000-admin-form-management2-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_50_06.png" alt=""></div><figcaption><span class="n">6</span>Builder — ฟอร์ม Full Stack Developer<small>ครบทุกชนิด: Read Only + YouTube · Paragraph · File Upload (5 ไฟล์ / 100 MB) · Video Record 180 วินาที · Paragraph ที่มีเกณฑ์ “ประสบการณ์” และ “นิสัย” พร้อมรูบริก 0–2 · Multiple Choice พร้อมรูปภาพ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/Screenshot%202569-09-24%20at%2000.09.54.png" alt=""></div><figcaption><span class="n">7</span>แท็บ Responses<small>ตารางการตอบกลับ: สถานะ “ส่งแบบฟอร์มแล้ว” · เวลาส่ง · คะแนนรวม · ชื่อผู้สมัคร · คะแนนแยกเกณฑ์ · ปุ่มส่งออก Excel</small></figcaption></figure>
+      <figure class="shot"><div class="img"><span class="long">ภาพยาว</span><img loading="lazy" src="capture-web/screencapture-localhost-3000-admin-form-detail-cmuectyqj0000qj4f5ynhsl3r-2026-09-24-00_10_22.png" alt=""></div><figcaption><span class="n">8</span>รายละเอียดคำตอบของผู้สมัคร<small>คะแนนรวม นิสัย 2/2 · ประสบการณ์ 2/2 · เวลาที่ใช้ต่อข้อและป้าย “เกินเวลาที่กำหนด” · ลิงก์ไฟล์ Resume และคลิปวิดีโอ · คะแนนและเหตุผลจาก AI แยกตามเกณฑ์</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CANDIDATE ===================== -->
+<section class="section ov" id="candidate">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Public · ผู้สมัครงาน</span>
+        <h2>ฟอร์มสัมภาษณ์ของผู้สมัคร</h2>
+        <p>ผู้สมัครเปิดลิงก์ <code>/form/[formId]</code> ได้ทันที ครั้งแรกระบบสร้าง <code>FormAnswer</code> แล้วเก็บ id ไว้ใน localStorage (<code>formSubmitId:{formId}</code>) เพื่อให้กลับมาทำต่อได้ จากนั้น <code>getRemainingQuestions</code> จะส่งคำถามที่ยังไม่ได้ตอบมาทีละข้อ แต่ละข้อมีตัวนับถอยหลังและส่งให้อัตโนมัติเมื่อหมดเวลา ระบบบล็อกการ copy / paste / cut ยกเว้นข้อที่อนุญาตไว้</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#cd-types">ประเภทคำถาม</a><a href="#cd-shots">ภาพหน้าจอ</a><a href="#cd-flow">Flow การตอบ</a>
+    </div>
+
+    <div class="gal-head" id="cd-types"><h3>การทำงานของคำถามแต่ละประเภท</h3><span>คอมโพเนนต์แยกต่อประเภทอยู่ใต้ <code>src/app/components/userForm/</code></span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>ประเภท</th><th>ผู้สมัครทำอะไร</th><th>ระบบทำอะไรต่อ</th></tr></thead>
+        <tbody>
+          <tr class="co"><td>READ_ONLY</td><td>อ่านข้อความหรือดูวิดีโอ YouTube แนะนำบริษัท</td><td>ไม่บันทึกคำตอบ แค่กด “ถัดไป”</td></tr>
+          <tr class="co"><td>PARAGRAPH</td><td>พิมพ์คำตอบยาวภายในเวลาที่กำหนด</td><td><code>questionAnswer.create</code> → AI ให้คะแนนตามเกณฑ์เบื้องหลัง</td></tr>
+          <tr class="co"><td>MULTIPLE_CHOICE</td><td>เลือกหนึ่งตัวเลือก (มีรูปประกอบได้)</td><td>บันทึกและให้คะแนนเหมือน PARAGRAPH</td></tr>
+          <tr class="co"><td>FILE_UPLOAD</td><td>ลากวาง JPG / PDF / PNG / MP4 ตามจำนวนและขนาดที่ตั้งไว้</td><td>Server Action อัปโหลดขึ้น UploadThing แล้วเก็บ URL ต่อกันด้วยจุลภาค</td></tr>
+          <tr class="co"><td>RESUME</td><td>อัปโหลด Resume เป็น PDF</td><td>ดึงข้อความจาก PDF ในเบราว์เซอร์ (<code>react-pdftotext</code>) → ให้ AI ให้คะแนน → แนบไฟล์ PDF</td></tr>
+          <tr class="co"><td>VIDEO_RECORD</td><td>อัดวิดีโอแนะนำตัวจากกล้องหรือแชร์หน้าจอ เลือกไมโครโฟนได้</td><td>จับภาพหนึ่งเฟรม → <code>dressAnalyze</code> · อัดเสียงแยก → <code>speechToText</code> → บันทึกคำถอดเสียง แล้วอัปโหลดไฟล์ .webm</td></tr>
+          <tr class="co"><td>DISC</td><td>แบบทดสอบบุคลิกภาพ 24 ข้อแบบบังคับเลือก ข้อละ 10 วินาที</td><td>นับ D/I/S/C ฝั่งเบราว์เซอร์ → gpt-4o สรุปและเทียบกับตำแหน่งงาน → บันทึกคะแนน</td></tr>
+          <tr class="co"><td>TEST_SUCCESS</td><td>เห็นหน้า “ส่งแบบทดสอบสำเร็จ !”</td><td>จบการสัมภาษณ์</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gal-head" id="cd-shots"><h3>ภาพหน้าจอ — ผู้สมัคร</h3><span>8 หน้าจอ · ถ่ายจากโหมดพรีวิวและฟอร์มจริงของตำแหน่ง Full Stack Developer</span></div>
+    <div class="shots screens" data-group="cand">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-preview-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_51_13.png" alt=""></div><figcaption><span class="n">1</span>READ_ONLY + YouTube<small>คำถามแรกแนะนำบริษัทด้วยวิดีโอ METANET Show Reel ก่อนเริ่มตอบ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-preview-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_51_41.png" alt=""></div><figcaption><span class="n">2</span>FILE_UPLOAD — ก่อนเลือกไฟล์<small>รับ JPG · PDF · PNG · MP4 สูงสุด 5 ไฟล์ ไฟล์ละไม่เกิน 100 MB ตามค่าที่ตั้งใน builder</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-preview-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_53_37.png" alt=""></div><figcaption><span class="n">3</span>FILE_UPLOAD — เลือกไฟล์แล้ว<small>Resume · JD · Portfolio พร้อมแถบความคืบหน้าและปุ่มลบต่อไฟล์ ก่อนกด Upload</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-preview-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_54_33.png" alt=""></div><figcaption><span class="n">4</span>VIDEO_RECORD — ก่อนเริ่ม<small>“แนะนำตัวเองสั้นๆ ภายในเวลา 3 นาที” · เลือกแชร์หน้าจอหรือเปิดกล้อง และเลือกไมโครโฟน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-preview-cmuebxtwg00015g4f5uzncto5-2026-09-23-23_55_09.png" alt=""></div><figcaption><span class="n">5</span>VIDEO_RECORD — อัดเสร็จ<small>เล่นวิดีโอที่อัดไว้ย้อนดูได้ก่อนกด “ถัดไป” · มีหมายเหตุเรื่องสิทธิ์การแชร์หน้าจอ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-cmuebxtwg00015g4f5uzncto5-2026-09-24-00_07_48.png" alt=""></div><figcaption><span class="n">6</span>PARAGRAPH พร้อมนับถอยหลัง<small>คำถามเรื่องประสบการณ์ · “Time left: 14 minutes 17 seconds” · คำตอบนี้ถูกส่งให้ AI ประเมินตามเกณฑ์ นิสัย และ ประสบการณ์</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-cmuebxtwg00015g4f5uzncto5-2026-09-24-00_08_00.png" alt=""></div><figcaption><span class="n">7</span>MULTIPLE_CHOICE พร้อมรูปภาพ<small>“เพศของท่าน” · ตัวเลือกเป็นปุ่ม · เวลาเหลือ 2 นาที 56 วินาที</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-3000-form-cmuebxtwg00015g4f5uzncto5-2026-09-24-00_08_26.png" alt=""></div><figcaption><span class="n">8</span>TEST_SUCCESS<small>“ส่งแบบทดสอบสำเร็จ !” — บริษัทได้รับคำตอบแล้ว และจะติดต่อกลับภายหลัง</small></figcaption></figure>
+    </div>
+
+    <div class="darch" id="cd-flow">
+      <h3>Flow ตั้งแต่ผู้สมัครเปิดลิงก์จนผู้ดูแลเห็นคะแนน</h3>
+      <p>แถวบนคือสิ่งที่เกิดขึ้นขณะผู้สมัครตอบทีละข้อ แถวล่างคือการให้คะแนนด้วย AI ที่รันเบื้องหลังโดยไม่ทำให้ผู้สมัครต้องรอ</p>
+      <svg viewBox="0 0 1000 320" role="img" aria-label="แผนภาพลำดับการตอบฟอร์มและให้คะแนนของ Smart Hire AI">
+        <defs>
+          <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+          <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--gw)"/></marker>
+          <marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--web)"/></marker>
+        </defs>
+
+        <rect class="box o" x="23" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="108" y="60" text-anchor="middle">ผู้สมัครเปิดลิงก์</text>
+        <text class="sub" x="108" y="78" text-anchor="middle">/form/[formId]</text>
+        <text class="sub" x="108" y="93" text-anchor="middle">ไม่ต้องล็อกอิน</text>
+
+        <rect class="box a" x="219" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="304" y="60" text-anchor="middle">สร้าง FormAnswer</text>
+        <text class="sub" x="304" y="78" text-anchor="middle">เก็บ id ใน localStorage</text>
+        <text class="sub" x="304" y="93" text-anchor="middle">กลับมาทำต่อได้</text>
+
+        <rect class="box a" x="415" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="500" y="60" text-anchor="middle">getRemainingQuestions</text>
+        <text class="sub" x="500" y="78" text-anchor="middle">ส่งข้อที่ยังไม่ตอบ</text>
+        <text class="sub" x="500" y="93" text-anchor="middle">เรียงตาม order</text>
+
+        <rect class="box o" x="611" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="696" y="60" text-anchor="middle">ตอบภายในเวลา</text>
+        <text class="sub" x="696" y="78" text-anchor="middle">หมดเวลา = ส่งอัตโนมัติ</text>
+        <text class="sub" x="696" y="93" text-anchor="middle">ไฟล์ → UploadThing</text>
+
+        <rect class="box a" x="807" y="36" width="170" height="70" rx="10"/>
+        <text class="lbl" x="892" y="60" text-anchor="middle">questionAnswer.create</text>
+        <text class="sub" x="892" y="78" text-anchor="middle">บันทึก answer · timeUsed</text>
+        <text class="sub" x="892" y="93" text-anchor="middle">แล้ววนไปข้อถัดไป</text>
+
+        <path class="edge" d="M193 71 L214 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M389 71 L410 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M585 71 L606 71" marker-end="url(#b1)"/>
+        <path class="edge" d="M781 71 L802 71" marker-end="url(#b1)"/>
+
+        <path class="edge in" d="M892 106 L892 176" marker-end="url(#b2)"/>
+        <text class="elbl" x="900" y="145">fire-and-forget</text>
+
+        <rect class="box g" x="807" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="892" y="204" text-anchor="middle">scoringByChatGPT</text>
+        <text class="sub" x="892" y="222" text-anchor="middle">gpt-4o-mini · JSON mode</text>
+        <text class="sub" x="892" y="237" text-anchor="middle">ส่งคำตอบ + รูบริกทุกเกณฑ์</text>
+
+        <rect class="box a" x="611" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="696" y="204" text-anchor="middle">ScoringCriteriaAiResult</text>
+        <text class="sub" x="696" y="222" text-anchor="middle">score + note ต่อเกณฑ์</text>
+        <text class="sub" x="696" y="237" text-anchor="middle">ต่อผู้สมัคร</text>
+
+        <rect class="box a" x="415" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="500" y="204" text-anchor="middle">ChatGptHistory</text>
+        <text class="sub" x="500" y="222" text-anchor="middle">input / output token</text>
+        <text class="sub" x="500" y="237" text-anchor="middle">+ อัตราค่าบริการขณะนั้น</text>
+
+        <rect class="box w" x="219" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="304" y="204" text-anchor="middle">แท็บ Responses</text>
+        <text class="sub" x="304" y="222" text-anchor="middle">คะแนนรวม · แยกเกณฑ์</text>
+        <text class="sub" x="304" y="237" text-anchor="middle">ส่งออก Excel</text>
+
+        <rect class="box w" x="23" y="180" width="170" height="70" rx="10"/>
+        <text class="lbl" x="108" y="204" text-anchor="middle">form-detail</text>
+        <text class="sub" x="108" y="222" text-anchor="middle">คำตอบ ไฟล์ วิดีโอ</text>
+        <text class="sub" x="108" y="237" text-anchor="middle">เหตุผลจาก AI ต่อเกณฑ์</text>
+
+        <path class="edge in" d="M802 212 L786 212" marker-end="url(#b2)"/>
+        <path class="edge" d="M606 212 L590 212" marker-end="url(#b1)"/>
+        <path class="edge" d="M410 212 L394 212" marker-end="url(#b1)"/>
+        <path class="edge" d="M214 212 L198 212" marker-end="url(#b1)"/>
+      </svg>
+      <div class="legend-row">
+        <span>ขั้นตอนขณะผู้สมัครตอบ</span><span class="in">ให้คะแนนด้วย AI เบื้องหลัง</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== AI ===================== -->
+<section class="section gw" id="ai">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Integration · OpenAI</span>
+        <h2>AI Scoring และการวิเคราะห์ผู้สมัคร</h2>
+        <p>ฟังก์ชัน AI ทั้งหมดอยู่ใน <code>src/server/chatGPTService.ts</code> ใช้ prompt ภาษาไทย และขอผลเป็น JSON (ยกเว้นการถอดเสียง) หัวใจของระบบคือ <b>การให้คะแนนตามรูบริก</b> ผู้ดูแลกำหนดว่าแต่ละเกณฑ์ เช่น “นิสัย” หรือ “ประสบการณ์” ได้คะแนนเท่าไรเมื่อคำตอบเป็นแบบไหน แล้ว GPT จะให้คะแนนพร้อมเหตุผลเป็นภาษาไทยที่ผู้ดูแลอ่านทวนได้</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">📐</span>การให้คะแนนตามเกณฑ์</h3>
+        <ul class="feat">
+          <li>system prompt ให้ GPT รับบทผู้สรรหาที่มีประสบการณ์ และแนบรูบริกของทุกเกณฑ์ในรูป “ให้คะแนน X หาก …”</li>
+          <li>ขอผลเป็น <code>{data:[{criteriaId, criteriaName, aiResult:{score, note}}]}</code></li>
+          <li>ทำงานแบบ fire-and-forget หลัง <code>questionAnswer.create</code> ผู้สมัครจึงไปข้อถัดไปได้ทันที</li>
+          <li>ผลบันทึกลง <code>ScoringCriteriaAiResult</code> และจำนวน token ลง <code>ChatGptHistory</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🎥</span>วิดีโอ เสียง และภาพ</h3>
+        <ul class="feat">
+          <li><b>speechToText</b> ส่งเสียงที่อัดแยกให้ <code>whisper-1</code> ถอดความภาษาไทย และตัดข้อความที่ Whisper มักแต่งขึ้นเอง (“โปรดติดตามตอนต่อไป”) ทิ้ง</li>
+          <li><b>dressAnalyze</b> จับภาพหนึ่งเฟรมจากวิดีโอด้วย canvas แล้วส่งให้ gpt-4o-mini vision ประเมินการแต่งกาย</li>
+          <li>คำถอดเสียงถูกบันทึกเป็นคำตอบ จึงให้คะแนนตามเกณฑ์ได้เหมือนคำตอบที่พิมพ์</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧠</span>DISC และการสร้างคำถาม</h3>
+        <ul class="feat">
+          <li><b>analyzeDiscScore</b> (gpt-4o) รับคะแนน D/I/S/C กับชื่อตำแหน่ง แล้วตอบ <code>summary</code> และ <code>analyzeWithFormTitle</code> ว่าบุคลิกเหมาะกับงานหรือไม่</li>
+          <li><b>generateQuestionByGpt</b> (gpt-4o-mini) สร้างคำถามสัมภาษณ์ภาษาไทยหนึ่งข้อพร้อมรูบริก ไม่ซ้ำคำถามเดิม และใช้หลัก DISC กับคำถามด้านบุคลิกภาพ</li>
+          <li>Resume ถูกแปลงเป็นข้อความในเบราว์เซอร์ก่อน แล้วให้คะแนนผ่านเกณฑ์ชุดเดียวกัน</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ฟังก์ชันที่เรียก OpenAI</h3><span>5 ฟังก์ชันที่ใช้งานจริง</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>ฟังก์ชัน</th><th>โมเดล</th><th>ใช้ตอนไหน</th></tr></thead>
+        <tbody>
+          <tr class="cg"><td>scoringByChatGPT</td><td class="mono">gpt-4o-mini</td><td>หลังบันทึกคำตอบทุกข้อที่มีเกณฑ์ประเมิน รวมถึงผล DISC</td></tr>
+          <tr class="cg"><td>generateQuestionByGpt</td><td class="mono">gpt-4o-mini</td><td>ผู้ดูแลกด “สร้างคำถามด้วย AI” ในหน้า builder</td></tr>
+          <tr class="cg"><td>analyzeDiscScore</td><td class="mono">gpt-4o</td><td>ผู้สมัครทำแบบทดสอบ DISC ครบ 24 ข้อ</td></tr>
+          <tr class="cg"><td>dressAnalyze</td><td class="mono">gpt-4o-mini (vision)</td><td>หลังอัดวิดีโอแนะนำตัว (ใช้ <code>OPENAI_API_KEY_IMAGE_UPLOAD</code>)</td></tr>
+          <tr class="cg"><td>speechToText</td><td class="mono">whisper-1</td><td>หลังอัดวิดีโอแนะนำตัว (ภาษา th)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <h3><span class="ic">💰</span>การคิดค่า token และเครดิต</h3>
+        <ul class="feat">
+          <li><code>ChatGPTConfig</code> เก็บราคาต่อ token ขาเข้า/ขาออก ทั้งราคาทุนของ OpenAI และราคาที่เราคิด พร้อมอัตรา USD→THB</li>
+          <li>ทุกการเรียก AI บันทึก token และ snapshot ของ config ลง <code>ChatGptHistory</code> / <code>ChatGptUse</code></li>
+          <li>มีโมเดล <code>Transaction</code> และ <code>DepositRequest</code> เตรียมไว้ แต่ยังไม่มีโค้ดตัดเครดิต และหน้าเติมเครดิตยังเป็นข้อมูลคงที่</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">📦</span>UploadThing</h3>
+        <ul class="feat">
+          <li>ใช้แผน Free (2GB app) ของโปรเจกต์ <code>test-uat</code> อัปโหลดแบบ Serverside Upload</li>
+          <li>ไฟล์ Resume / Portfolio ใช้ชื่อเดิม ส่วนวิดีโอใช้ชื่อเป็น uuid</li>
+          <li><code>next.config.js</code> ขยาย <code>bodySizeLimit</code> ของ Server Action เป็น 1GB เพื่อรองรับวิดีโอ</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอ — UploadThing</h3><span>แดชบอร์ดของผู้ให้บริการเก็บไฟล์</span></div>
+    <div class="shots screens" data-group="ut">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/uploadthing_File.png" alt=""></div><figcaption><span class="n">1</span>Files<small>ไฟล์ที่ผู้สมัครอัปโหลด: Resume (≈345KB) และวิดีโอที่ตั้งชื่อเป็น uuid (1–2MB) ผ่าน route “Serverside Upload”</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/uploadthing_Plan.png" alt=""></div><figcaption><span class="n">2</span>Plans &amp; Billing<small>ใช้แผน Free (2GB) · ขยายเป็น 100GB ที่ $10/เดือน หรือแบบ Usage Based เริ่ม $25/เดือนเมื่อมีวิดีโอมากขึ้น</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DEPLOY ===================== -->
+<section class="section deploy" id="deploy">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Local dev · Docker · CI/CD</span>
+        <h2>การพัฒนาและการ Deploy</h2>
+        <p>โปรเจกต์เดียว ใช้ npm และ Node 24 (<code>.nvmrc</code>) · บนเครื่องพัฒนายก PostgreSQL ด้วย docker compose แล้วรัน <code>next dev</code> จาก source · ตอนขึ้นระบบใช้ GitHub Actions บน self-hosted runner ของ Metanet สร้าง Docker image แบบ standalone แล้วรันเป็น container บนเซิร์ฟเวอร์เดียวกัน</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#dep-local">เครื่องพัฒนา</a><a href="#dep-cicd">CI/CD</a><a href="#dep-notes">ข้อสังเกต</a>
+    </div>
+
+    <div class="grid3" id="dep-local">
+      <div class="card">
+        <h3><span class="ic">🧰</span>Dependency ฝั่งเครื่องพัฒนา</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL 16</b><span>container <code>smart-hire-ai-postgres</code> · พอร์ต 5432 · ฐานข้อมูล <code>smart-hire-ai</code> · เปิด <code>log_statement=all</code> · ข้อมูลอยู่ที่ <code>./postgres_data</code></span></div></li>
+          <li><span class="sic">🤖</span><div><b>OpenAI จริง</b><span>ไม่มีตัวจำลอง ทุกการตอบคำถามที่มีเกณฑ์จะเสีย token จริง</span></div></li>
+          <li><span class="sic">📁</span><div><b>UploadThing จริง</b><span>ชี้ไปที่แอปตาม <code>UPLOADTHING_TOKEN</code></span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">▶</span>ขั้นตอนรันระบบ</h3>
+        <ol class="steps">
+          <li><code>nvm use</code> <small>— Node 24 ตาม <code>.nvmrc</code></small></li>
+          <li><code>npm i</code> <small>— <code>postinstall</code> จะรัน <code>prisma generate</code> ให้</small></li>
+          <li>คัดลอก <code>.env.local.bk</code> เป็น <code>.env</code> <small>— สคริปต์ <code>set:local</code> ใช้ PowerShell จึงรันได้เฉพาะ Windows</small></li>
+          <li><code>docker compose up -d</code> <small>— ยก PostgreSQL</small></li>
+          <li><code>npm run db:migrate</code> แล้ว <code>npm run db:seed</code> <small>— seed จะ<b>ลบข้อมูลทุกตาราง</b> ถามอีเมลผู้ดูแล และสร้างฟอร์มตัวอย่าง 7 คำถาม</small></li>
+          <li><code>npm run dev</code> <small>— เว็บที่พอร์ต 3000</small></li>
+        </ol>
+        <p class="fine">คำสั่งอื่น: <code>db:studio</code> · <code>db:generate</code> (migrate dev) · <code>db:push</code> · <code>lint</code> · <code>build-dev</code> (lint + build)</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧩</span>สถานะของชุดทดสอบ</h3>
+        <ul class="feat">
+          <li><b>ยังไม่มี test framework และไม่มีไฟล์ทดสอบ</b></li>
+          <li>ด่านตรวจคือ ESLint 9 (flat config: next core-web-vitals + typescript-eslint แบบ type-checked) และ TypeScript strict + <code>noUncheckedIndexedAccess</code></li>
+          <li>มีเคสทดสอบแบบ manual ใน <code>testdata/testcase-form-management.txt</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid3 two" id="dep-cicd">
+      <div class="card">
+        <h3><span class="ic">⚙</span>GitHub Actions — deploy-metanet-server.yml</h3>
+        <ol class="steps">
+          <li>ทริกเกอร์เมื่อ push เข้า <code>main</code> · รันบน self-hosted runner <code>metanet-odoo</code></li>
+          <li>checkout · ตั้ง Node 24 · สร้าง <code>.env</code> จาก secrets</li>
+          <li><code>docker build -t smart-hire-prod -f Dockerfile.cicd .</code></li>
+          <li><code>npx prisma migrate deploy</code></li>
+          <li>ลบ <code>.env</code> · หยุดและลบ container เก่า</li>
+          <li><code>docker run -d --restart=unless-stopped</code> บน network <code>odoo-network</code> · หมุน log 10MB × 5</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🐳</span>Dockerfile.cicd</h3>
+        <ul class="feat">
+          <li>multi-stage (deps → builder → runner) บน <code>node:24.21.0-alpine</code> + openssl · libc6-compat</li>
+          <li><code>npm ci</code> → <code>prisma generate</code> → <code>npm run build</code> แบบ <code>output: "standalone"</code></li>
+          <li>รันด้วยผู้ใช้ non-root <code>nextjs:1001</code> · เปิดพอร์ต 3000 · <code>CMD node server.js</code></li>
+          <li><code>vercel.json</code> (region <code>sin1</code>) เป็นของเดิม — ไพป์ไลน์ที่ใช้จริงคือ Metanet server</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Smart Hire AI — Powered by Metanet Corporation · Next.js 16 App Router + React 19 + tRPC 11 + Prisma 7 + PostgreSQL 16 · NextAuth (Google) · OpenAI (gpt-4o-mini · gpt-4o · whisper-1) · UploadThing · CI/CD GitHub Actions → Docker บนเซิร์ฟเวอร์ Metanet · เอกสารนำเสนอโครงการ
+  </div>
+</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="x" id="lbClose" aria-label="ปิด">✕</button>
+  <button class="p" id="lbPrev" aria-label="ก่อนหน้า">‹</button>
+  <div class="frame" id="lbFrame"><img id="lbImg" src="" alt=""></div>
+  <button class="nx" id="lbNext" aria-label="ถัดไป">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+(function(){
+  // theme toggle
+  var root=document.documentElement,btn=document.getElementById('themeBtn');
+  try{var t=localStorage.getItem('smarthire-theme');if(t)root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=dark?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('smarthire-theme',next);}catch(e){}
+  });
+
+  // lightbox
+  var lb=document.getElementById('lb'),img=document.getElementById('lbImg'),cap=document.getElementById('lbCap'),frame=document.getElementById('lbFrame');
+  var items=[],idx=0;
+  document.querySelectorAll('.shots').forEach(function(g){
+    var group=g.getAttribute('data-group');
+    g.querySelectorAll('.shot').forEach(function(f){
+      var i=f.querySelector('img'),c=f.querySelector('figcaption');
+      var item={src:i.getAttribute('src'),cap:c.textContent.replace(/\s+/g,' ').trim(),group:group};
+      items.push(item);
+      f.addEventListener('click',function(){open(items.indexOf(item));});
+    });
+  });
+  function show(){var it=items[idx];img.src=it.src;cap.textContent=it.cap;frame.scrollTop=0;}
+  function open(i){idx=i;show();lb.classList.add('open');document.body.style.overflow='hidden';}
+  function close(){lb.classList.remove('open');document.body.style.overflow='';}
+  function step(d){var g=items[idx].group;var n=idx;do{n=(n+d+items.length)%items.length;}while(items[n].group!==g);idx=n;show();}
+  document.getElementById('lbClose').onclick=close;
+  document.getElementById('lbPrev').onclick=function(e){e.stopPropagation();step(-1);};
+  document.getElementById('lbNext').onclick=function(e){e.stopPropagation();step(1);};
+  lb.addEventListener('click',function(e){if(e.target===lb)close();});
+  document.addEventListener('keydown',function(e){
+    if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);
+  });
+})();
+</script>
+</body>
+</html>
