@@ -800,7 +800,7 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
       <div>
         <span class="tag">Deploy · PROD</span>
         <h2>hr_mobile / browser → Cloudflare edge → Tunnel → cloudflared pod → hr-bo / hr-api pod → RDS</h2>
-        <p>k3s บน EC2 หลายเครื่องคนละ AZ รัน pod ของ hr-bo และ hr-api พร้อม HPA · ฐานข้อมูลเป็น RDS PostgreSQL Multi-AZ · ขาเข้ายังเป็น Cloudflare Tunnel เหมือน UAT จึงไม่มี ALB, ACM, NAT และไม่มี inbound 80/443</p>
+        <p>k3s บน EC2 หลายเครื่องคนละ AZ รัน pod ของ hr-bo และ hr-api พร้อม HPA · ฐานข้อมูลเป็น RDS PostgreSQL Multi-AZ · ขาเข้ายังเป็น Cloudflare Tunnel เหมือน UAT จึงไม่มี ALB, ACM, NAT · SG ของ node <b>ไม่มี inbound rule จากภายนอกเลย</b> ไม่เปิดแม้แต่ 6443 ของ k8s API — <code>kubectl</code> และ Lens เข้าทาง SSM port-forward</p>
       </div>
     </div>
 
@@ -816,7 +816,7 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
         </defs>
 
         <rect class="zone p" x="430" y="30" width="650" height="510" rx="12"/>
-        <text class="zlbl" x="446" y="50">VPC 10.20.0.0/16 · public subnet 2 AZ · ไม่มี NAT · SG node: 6443 จาก IP ผู้ดูแล + self เท่านั้น</text>
+        <text class="zlbl" x="446" y="50">VPC 10.20.0.0/16 · public subnet 2 AZ · ไม่มี NAT · SG node: ไม่มี inbound จากภายนอก (node ↔ node เท่านั้น)</text>
         <rect class="zone" x="450" y="70" width="440" height="400" rx="10"/>
         <text class="zlbl" x="466" y="90">k3s cluster · server t4g.medium (AZ-a) + agent t4g.small ×2 (AZ-a, AZ-b)</text>
 
@@ -863,7 +863,7 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
         <!-- SSM -->
         <rect class="box p" x="480" y="390" width="150" height="54" rx="10"/>
         <text class="lbl" x="555" y="412" text-anchor="middle">SSM agent</text>
-        <text class="sub" x="555" y="430" text-anchor="middle">kubectl จาก CI · psql tunnel</text>
+        <text class="sub" x="555" y="430" text-anchor="middle">kubectl จาก CI · tunnel 6443 + RDS</text>
 
         <!-- RDS -->
         <rect class="box p" x="910" y="170" width="150" height="64" rx="10"/>
@@ -876,16 +876,16 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
 
         <rect class="box p" x="910" y="390" width="150" height="54" rx="10"/>
         <text class="lbl" x="985" y="412" text-anchor="middle">IAM · EIP · IGW</text>
-        <text class="sub" x="985" y="430" text-anchor="middle">role SSM · IP คงที่ของ server</text>
+        <text class="sub" x="985" y="430" text-anchor="middle">role SSM · EIP = IP ขาออกคงที่</text>
 
         <rect class="box p" x="910" y="470" width="150" height="44" rx="10"/>
         <text class="lbl" x="985" y="489" text-anchor="middle">CloudWatch</text>
         <text class="sub" x="985" y="505" text-anchor="middle">RDS metrics · alarm → email</text>
 
         <!-- Admin -->
-        <rect class="box" x="240" y="390" width="160" height="54" rx="10"/>
-        <text class="lbl" x="320" y="412" text-anchor="middle">ผู้ดูแล (macOS)</text>
-        <text class="sub" x="320" y="430" text-anchor="middle">kubectl → EIP:6443 · SSM</text>
+        <rect class="box" x="216" y="390" width="184" height="54" rx="10"/>
+        <text class="lbl" x="308" y="412" text-anchor="middle">ผู้ดูแล (macOS)</text>
+        <text class="sub" x="308" y="430" text-anchor="middle">kubectl → 127.0.0.1:16443 ผ่าน SSM</text>
 
         <!-- external -->
         <rect class="zone" x="30" y="565" width="1050" height="95" rx="10"/>
@@ -918,7 +918,7 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
         <path class="edge ext" d="M985 314 V468" marker-end="url(#ap2)"/>
         <path class="edge" d="M760 390 V356" marker-end="url(#ap2)"/>
         <path class="edge adm" d="M400 417 H478" marker-end="url(#ap4)"/>
-        <path class="edge adm" d="M320 390 V350 H440 V550 H1090 V417 H1062" marker-end="url(#ap4)"/>
+        <path class="edge adm" d="M308 390 V350 H440 V550 H1090 V417 H1062" marker-end="url(#ap4)"/>
         <path class="edge ext" d="M700 274 V480 H420 V598" marker-end="url(#ap2)"/>
         <text class="sub" x="430" y="555">hr-api → S3 / SES / FCM</text>
         <path class="edge ext" d="M115 288 V515 H670 V598" marker-end="url(#ap2)"/>
@@ -944,8 +944,8 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
         <ul class="svc">
           <li><span class="sic">🖥</span><div><b>EC2 × 3 · k3s</b><span>server t4g.medium (AL2023, arm64) + agent t4g.small ×2 join ด้วย node-token ผ่าน SSM · เพิ่มได้อีกด้วย <code>./add_node.sh N</code></span></div></li>
           <li><span class="sic">🐘</span><div><b>RDS PostgreSQL 16 · db.t4g.small Multi-AZ</b><span>subnet group 2 AZ · SG รับ 5432 จาก SG ของ node เท่านั้น · storage gp3 50 GB autoscaling · backup รายวัน + PITR</span></div></li>
-          <li><span class="sic">🕸</span><div><b>VPC · IGW · EIP</b><span>public subnet 2 AZ ไม่มี NAT · EIP ผูก server ให้ kubeconfig ชี้ที่เดิม · SG node เปิดแค่ 6443 จาก IP ผู้ดูแล + self</span></div></li>
-          <li><span class="sic">🔐</span><div><b>IAM role + SSM</b><span>role เดียวสำหรับทุก node · ไม่มี SSH · GitHub Actions สั่ง kubectl ผ่าน SSM ด้วย role OIDC</span></div></li>
+          <li><span class="sic">🕸</span><div><b>VPC · IGW · EIP</b><span>public subnet 2 AZ ไม่มี NAT · EIP ผูก server ให้ IP ขาออกคงที่ · SG node อนุญาตแค่ node ↔ node ไม่มี inbound จากภายนอกเลย (ไม่เปิด 22/80/443/6443)</span></div></li>
+          <li><span class="sic">🔐</span><div><b>IAM role + SSM</b><span>role เดียวสำหรับทุก node · ไม่มี SSH key · ผู้ดูแลเข้า cluster ด้วย <code>./connect_k8s.sh</code> (port-forward 6443) และเข้า DB ด้วย <code>./connect_rds.sh</code> · GitHub Actions สั่ง kubectl ผ่าน SSM ด้วย role OIDC</span></div></li>
           <li><span class="sic">🪣</span><div><b>S3 (bucket prod)</b><span>versioning + lifecycle · hr-api ใช้ IAM user เฉพาะ bucket นี้ผ่าน <code>AWS_ACCESS_KEY_ID</code> ใน secret</span></div></li>
           <li><span class="sic">📈</span><div><b>CloudWatch</b><span>metrics ของ RDS (CPU, connections, free storage) + alarm ส่งอีเมล · log ของ pod ดูด้วย <code>kubectl logs</code> หรือ ship ด้วย Fluent Bit ภายหลัง</span></div></li>
         </ul>
@@ -964,13 +964,13 @@ ENV_NAME=uat2 APP_TAG=feature-x ./deploy.sh</code></pre>
       <div class="card">
         <h3><span class="ic">🧭</span>ขั้นตอนสร้าง (5 ขั้น · ~20 นาที)</h3>
         <ol class="steps">
-          <li><code>./create_node.sh</code> VPC + IAM + EIP + EC2 server + k3s + kubeconfig <small>5 นาที</small></li>
+          <li><code>./create_node.sh</code> VPC + IAM + EIP + EC2 server + k3s + <code>kubeconfig</code> (server = <code>https://127.0.0.1:16443</code>) <small>5 นาที</small></li>
           <li><code>./create_rds.sh</code> subnet group + SG + RDS Multi-AZ + secret <code>rds-credentials</code> <small>10–12 นาที</small></li>
           <li><code>./create_tunnel.sh</code> Tunnel + ingress 2 hostname + CNAME + secret token <small>&lt; 1 นาที</small></li>
           <li><code>./add_node.sh 2</code> agent 2 เครื่องคนละ AZ join cluster <small>3 นาที</small></li>
           <li><code>./deploy.sh</code> apply secrets → Job migrate → api/bo/cloudflared + HPA → รอ 200 <small>1–2 นาที</small></li>
         </ol>
-        <p class="fine">ตรวจสอบ <code>./verify.sh</code> · ทดสอบ scale <code>./load_test.sh 120</code> ดู HPA ขยาย 2→6 · ต่อ DB <code>./connect_rds.sh</code> · ลบทิ้ง <code>./destroy.sh --yes</code> (ต้องปิด deletion protection ของ RDS ก่อน)</p>
+        <p class="fine">ก่อนขั้น 2–5 ต้องเปิด <code>./connect_k8s.sh</code> ค้างไว้อีก terminal (kubectl, Lens และสคริปต์ทุกตัววิ่งผ่าน tunnel นี้ ถ้าลืมเปิด สคริปต์จะฟ้องทันทีแทนที่จะ timeout) · ตรวจสอบ <code>./verify.sh</code> · ทดสอบ scale <code>./load_test.sh 120</code> ดู HPA ขยาย 2→6 · ต่อ DB <code>./connect_rds.sh</code> · ลบทิ้ง <code>./destroy.sh --yes</code> (ต้องปิด deletion protection ของ RDS ก่อน)</p>
       </div>
     </div>
 
@@ -1264,7 +1264,7 @@ kubectl set image deploy/bo  bo=northhr/hr-bo:$APP_TAG
 kubectl rollout status deploy/api --timeout=180s
 kubectl rollout status deploy/bo  --timeout=180s</code></pre>
         <ul class="feat" style="margin-top:14px">
-          <li><b>ทำไมผ่าน SSM</b> เครื่อง UAT ไม่มี inbound rule และ PROD เปิดแค่ 6443 จาก IP ผู้ดูแล runner ของ GitHub จึงต่อตรงไม่ได้ SSM ให้รันคำสั่งบนเครื่องได้โดยไม่เปิด port และ log คำสั่งทุกครั้ง</li>
+          <li><b>ทำไมผ่าน SSM</b> ทั้ง UAT และ PROD ไม่มี inbound rule ใน SG เลย (PROD ไม่เปิดแม้แต่ 6443 ของ k8s API) runner ของ GitHub จึงต่อตรงไม่ได้ SSM ให้รันคำสั่งบนเครื่องได้โดยไม่เปิด port และ log คำสั่งทุกครั้ง</li>
           <li><b>image เดียวกันทุก environment</b> tag ที่ผ่าน UAT คือ tag ที่จะ push เป็น <code>v*</code> ไป PROD ไม่ build ใหม่</li>
           <li><b>hr_mobile</b> มี workflow แยก: tag <code>mobile-v*</code> → build APK/IPA ด้วย <code>.env</code> ของ environment → Firebase App Distribution (UAT) / store (PROD) ดูหัวข้อ hr_mobile</li>
         </ul>
@@ -1343,7 +1343,7 @@ kubectl rollout status deploy/bo  --timeout=180s</code></pre>
       <div>
         <span class="tag">Operations</span>
         <h2>งานประจำและคำสั่งที่ใช้</h2>
-        <p>รันจาก macOS ของผู้ดูแลหลัง <code>aws sso login</code> · ทุกคำสั่งเข้าเครื่องผ่าน SSM</p>
+        <p>รันจาก macOS ของผู้ดูแลหลัง <code>aws sso login</code> · ทุกคำสั่งเข้าเครื่องผ่าน SSM จึงต้องติดตั้ง <code>session-manager-plugin</code> ไว้ (ไม่ใช่ของเสริม เพราะไม่มี port ไหนเปิดให้ต่อตรง)</p>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -1355,10 +1355,11 @@ kubectl rollout status deploy/bo  --timeout=180s</code></pre>
           <tr><td>ตรวจสุขภาพ</td><td class="cu"><code>./verify.sh</code></td><td class="cp"><code>./verify.sh</code> · <code>kubectl get hpa,pods -o wide</code></td></tr>
           <tr><td>ดู log</td><td class="cu"><code>./logs.sh api 200</code> · <code>./logs.sh bo</code></td><td class="cp"><code>kubectl logs deploy/api --tail=200</code> · <code>journalctl -u k3s</code> ผ่าน SSM</td></tr>
           <tr><td>ต่อฐานข้อมูล</td><td class="cu"><code>./connect_db.sh</code> → localhost:15432</td><td class="cp"><code>./connect_rds.sh</code> → localhost:15432 (ผ่าน SSM ของ server)</td></tr>
+          <tr><td>ต่อ k8s API (kubectl / Lens)</td><td class="cu">–</td><td class="cp"><code>./connect_k8s.sh</code> → localhost:16443 เปิดค้างไว้ (SSM port-forward ไป 6443 บน server) · <code>export KUBECONFIG=&lt;prod&gt;/kubeconfig</code></td></tr>
           <tr><td>backup</td><td class="cu"><code>pg_dump</code> ผ่าน tunnel ก่อน destroy / reset</td><td class="cp">RDS automated backup รายวัน + PITR · snapshot ก่อน migrate · EBS snapshot ของ server</td></tr>
           <tr><td>reset ข้อมูล</td><td class="cu"><code>./reset_db.sh</code> แล้ว migrate + seed ใหม่</td><td class="cp">ไม่ทำ</td></tr>
           <tr><td>ขยาย</td><td class="cu"><code>INSTANCE_TYPE=t4g.medium ./create_host.sh</code> (แนวตั้ง)</td><td class="cp">HPA อัตโนมัติ · <code>./add_node.sh N</code> · เปลี่ยน <code>DB_CLASS</code> (modify RDS)</td></tr>
-          <tr><td>เข้าเครื่อง</td><td class="cu"><code>./shell.sh</code> (SSM session)</td><td class="cp"><code>aws ssm start-session --target &lt;id&gt;</code> · kubectl จาก macOS ผ่าน EIP:6443</td></tr>
+          <tr><td>เข้าเครื่อง</td><td class="cu"><code>./shell.sh</code> (SSM session)</td><td class="cp"><code>aws ssm start-session --target &lt;id&gt;</code> · kubectl/Lens จาก macOS ผ่าน <code>./connect_k8s.sh</code></td></tr>
           <tr><td>ประหยัด</td><td class="cu"><code>./stop.sh</code> นอกเวลางาน (เหลือ ~$0.1/วัน)</td><td class="cp">เปิดตลอด · ลด agent เหลือ 1 นอกเวลา peak ได้ถ้ายอมรับ</td></tr>
           <tr><td>ลบทิ้ง</td><td class="cu"><code>./destroy.sh --yes</code> (~2 นาที)</td><td class="cp"><code>./destroy.sh --yes</code> หลังปิด deletion protection (~5 นาที)</td></tr>
         </tbody>
@@ -1413,7 +1414,7 @@ kubectl rollout status deploy/bo  --timeout=180s</code></pre>
           <tr><td>ผู้ใช้</td><td class="cl">นักพัฒนา</td><td class="cu">ผู้ทดสอบคนเดียว</td><td class="cp">พนักงาน 3,000–4,000 คน</td></tr>
           <tr><td>Compute</td><td class="cl">macOS · <code>npm run dev</code> · <code>make dev</code></td><td class="cu">EC2 t4g.small × 1 · docker compose</td><td class="cp">EC2 × 3 (2 AZ) · k3s · HPA</td></tr>
           <tr><td>ขาเข้า</td><td class="cl">localhost:8000 / :8080</td><td class="cu">Cloudflare Tunnel · cloudflared ×1</td><td class="cp">Cloudflare Tunnel + WAF · cloudflared ×3</td></tr>
-          <tr><td>port ที่เปิดใน SG</td><td class="cl">–</td><td class="cu">ไม่มี</td><td class="cp">6443 จาก IP ผู้ดูแลเท่านั้น</td></tr>
+          <tr><td>port ที่เปิดใน SG</td><td class="cl">–</td><td class="cu">ไม่มี</td><td class="cp">ไม่มี (kubectl ผ่าน SSM port-forward)</td></tr>
           <tr><td>Database</td><td class="cl">Postgres 16 ใน Docker Desktop</td><td class="cu">postgres:16 container · EBS</td><td class="cp">RDS PostgreSQL Multi-AZ · backup อัตโนมัติ</td></tr>
           <tr><td>Config / Secrets</td><td class="cl"><code>.env</code> จาก <code>set:local</code></td><td class="cu"><code>.env</code> + <code>api.env</code> บนเครื่อง generate ตอน deploy</td><td class="cp">k8s Secret → Secrets Manager</td></tr>
           <tr><td>Deploy</td><td class="cl">hot reload</td><td class="cu">Actions → Docker Hub → <code>compose up -d</code> อัตโนมัติ</td><td class="cp">Actions → Docker Hub → อนุมัติ → <code>kubectl set image</code> (migrate Job + rolling)</td></tr>
