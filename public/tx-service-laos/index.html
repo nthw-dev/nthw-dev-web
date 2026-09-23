@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tx-service-laos Overview</title>
+<meta name="description" content="เอกสารนำเสนอระบบ tx-service-laos: tx-service-laos-api (Go) และ tx-service-laos-web (Next.js) — เทคโนโลยี การเชื่อมต่อ LaoITPGW/UniqPay ฟีเจอร์ และภาพหน้าจอ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7fb;--surface:#ffffff;--surface-2:#eef1f7;--text:#1a1f2e;--muted:#5b6478;--line:#dfe3ec;
+  --brand:#1e2a5a;--brand-soft:#e6eaf7;--accent:#2f6df6;
+  --gw:#0ea5a4;--gw-soft:#dff6f5;--api:#d97706;--api-soft:#fdf0d9;--web:#7c3aed;--web-soft:#ede6fc;
+  --deploy:#0f766e;--deploy-soft:#d9f2ee;--local:#2563eb;--local-soft:#dbe7ff;--cf:#e7862b;--cf-soft:#fdeedd;
+  --prod:#b91c1c;--prod-soft:#fde4e4;--line-2:#c9cfd9;--ok:#16a34a;
+  --shadow:0 1px 2px rgba(20,25,45,.06),0 8px 24px rgba(20,25,45,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1320;--surface:#171c2c;--surface-2:#1f2537;--text:#e7eaf3;--muted:#9aa3b8;--line:#2a3147;
+    --brand:#aab8f0;--brand-soft:#232b48;--accent:#6c9cff;
+    --gw:#2dd4bf;--gw-soft:#123332;--api:#fbbf24;--api-soft:#3a2c10;--web:#b28bff;--web-soft:#2a1f45;
+    --deploy:#5eead4;--deploy-soft:#113a36;--local:#93c5fd;--local-soft:#172a4d;--cf:#f0a05a;--cf-soft:#3d2a16;
+    --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3a425a;--ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1320;--surface:#171c2c;--surface-2:#1f2537;--text:#e7eaf3;--muted:#9aa3b8;--line:#2a3147;
+  --brand:#aab8f0;--brand-soft:#232b48;--accent:#6c9cff;
+  --gw:#2dd4bf;--gw-soft:#123332;--api:#fbbf24;--api-soft:#3a2c10;--web:#b28bff;--web-soft:#2a1f45;
+  --deploy:#5eead4;--deploy-soft:#113a36;--local:#93c5fd;--local-soft:#172a4d;--cf:#f0a05a;--cf-soft:#3d2a16;
+  --prod:#f87171;--prod-soft:#3d1a1a;--line-2:#3a425a;--ok:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.9em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:8px;height:58px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);margin-right:auto;white-space:nowrap}
+.logo span{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;font-size:13px;letter-spacing:.5px}
+.nav a.link{color:var(--muted);font-weight:500;padding:6px 10px;border-radius:8px;font-size:.95rem;white-space:nowrap}
+.nav a.link:hover{background:var(--surface-2);color:var(--text)}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:16px;flex:none}
+
+/* hero */
+.hero{padding:64px 0 40px}
+.hero h1{font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{font-size:1.15rem;color:var(--muted);max-width:760px;margin:0 0 28px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:.92rem;color:var(--text);box-shadow:var(--shadow)}
+.pill i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pill.a i{background:var(--api)}.pill.w i{background:var(--web)}.pill.g i{background:var(--gw)}.pill.d i{background:var(--deploy)}
+
+/* architecture */
+.arch{margin:8px 0 56px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.arch h2{margin:0 0 6px;font-size:1.25rem}
+.arch p{margin:0 0 18px;color:var(--muted)}
+.arch svg{width:100%;height:auto;display:block}
+.arch text{font-family:"Noto Sans Thai",system-ui,sans-serif}
+
+/* section */
+.section{padding:48px 0;border-top:1px solid var(--line)}
+.section-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;margin-bottom:28px}
+.section-head .tag{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:6px;margin-bottom:8px}
+.section-head h2{margin:0;font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.01em}
+.section-head p{margin:4px 0 0;color:var(--muted);max-width:820px}
+.api .tag{background:var(--api-soft);color:var(--api)}
+.web .tag{background:var(--web-soft);color:var(--web)}
+.gw .tag{background:var(--gw-soft);color:var(--gw)}
+
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:36px}
+.grid3.two{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.card h3 .ic{width:28px;height:28px;border-radius:8px;display:inline-grid;place-items:center;font-size:14px;flex:none}
+.api .card h3 .ic{background:var(--api-soft);color:var(--api)}
+.web .card h3 .ic{background:var(--web-soft);color:var(--web)}
+.gw .card h3 .ic{background:var(--gw-soft);color:var(--gw)}
+.tech{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tech li{background:var(--surface-2);border:1px solid var(--line);padding:5px 11px;border-radius:8px;font-size:.88rem;font-weight:500}
+.tech li b{font-weight:700}
+.svc{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.svc li{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.svc .sic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:17px}
+.svc b{display:block;font-size:.95rem}
+.svc span{color:var(--muted);font-size:.88rem;line-height:1.5}
+.feat{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.feat li{position:relative;padding-left:24px;font-size:.95rem}
+.feat li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px}
+.api .feat li::before{background:var(--api)}
+.web .feat li::before{background:var(--web)}
+.gw .feat li::before{background:var(--gw)}
+.deploy .feat li::before{background:var(--brand)}
+
+/* gallery */
+.gal-head{display:flex;align-items:baseline;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+.gal-head h3{margin:0;font-size:1.2rem}
+.gal-head span{color:var(--muted);font-size:.9rem}
+.shots{display:grid;gap:16px}
+.shots.screens{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:zoom-in;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+.shot:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(20,25,45,.15)}
+.shot .img{background:var(--surface-2);position:relative;overflow:hidden}
+.screens .shot .img{aspect-ratio:1648/1323}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot figcaption{padding:10px 12px;font-size:.85rem;line-height:1.4}
+.shot figcaption small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+.shot .n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:6px;font-size:.72rem;font-weight:700;margin-right:6px;vertical-align:middle}
+.web .shot .n{background:var(--web-soft);color:var(--web)}
+.api .shot .n{background:var(--api-soft);color:var(--api)}
+.shot.tall .img{aspect-ratio:auto;max-height:720px;overflow:auto}
+.shot.tall img{height:auto;object-fit:contain}
+.shot.tall{cursor:default}
+.shot.tall:hover{transform:none}
+.api .shots{grid-template-columns:1fr}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(6,8,16,.92);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
+.lb.open{display:flex}
+.lb img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lb .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;color:#e7eaf3;font-size:.95rem;padding:0 60px}
+.lb button{position:absolute;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:20px;display:grid;place-items:center}
+.lb button:hover{background:rgba(255,255,255,.22)}
+.lb .x{top:18px;right:18px}.lb .p{left:18px;top:50%;transform:translateY(-50%)}.lb .nx{right:18px;top:50%;transform:translateY(-50%)}
+
+/* deploy */
+.deploy .section-head .tag{background:var(--brand-soft);color:var(--brand)}
+.deploy .card h3 .ic{background:var(--brand-soft);color:var(--brand)}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 24px}
+.subnav a{font-size:.85rem;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.subnav a:hover{color:var(--text);border-color:var(--line-2)}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.steps li{font-size:.95rem}
+.steps li small{color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:8px 0 0;max-width:900px}
+p code,li code,td code{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+
+/* diagram blocks */
+.darch{margin:0 0 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);overflow-x:auto}
+.gw .darch{border-color:var(--gw)} .deploy .darch{border-color:var(--brand)}
+.darch h3{margin:0 0 4px;font-size:1.15rem}
+.gw .darch h3{color:var(--gw)} .deploy .darch h3{color:var(--brand)}
+.darch p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
+.darch svg{width:100%;min-width:820px;height:auto;display:block;font-family:"Noto Sans Thai",system-ui,sans-serif}
+.darch .box{fill:var(--surface);stroke:var(--line-2);stroke-width:1.5}
+.darch .box.w{fill:var(--web-soft);stroke:var(--web)}
+.darch .box.a{fill:var(--api-soft);stroke:var(--api)}
+.darch .box.g{fill:var(--gw-soft);stroke:var(--gw)}
+.darch .box.d{fill:var(--surface-2);stroke:var(--line-2)}
+.darch .box.ci{fill:var(--local-soft);stroke:var(--local)}
+.darch .lbl{fill:var(--text);font-size:13px;font-weight:700}
+.darch .sub{fill:var(--muted);font-size:10.5px}
+.darch .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+.darch .edge.in{stroke:var(--gw)}
+.darch .edge.out{stroke:var(--ok);stroke-dasharray:5 3}
+.darch .edge.ext{stroke:var(--muted);stroke-dasharray:5 4}
+.darch .elbl{fill:var(--muted);font-size:10.5px}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:.85rem;color:var(--muted)}
+.legend-row span::before{content:"";display:inline-block;width:22px;height:0;border-top:2px solid var(--muted);margin-right:6px;vertical-align:middle}
+.legend-row .in::before{border-color:var(--gw)}
+.legend-row .out::before{border-color:var(--ok);border-top-style:dashed}
+.legend-row .ext::before{border-top-style:dashed}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);margin-bottom:24px}
+.cmp{width:100%;border-collapse:collapse;font-size:.9rem}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{color:var(--muted);font-weight:600;font-size:.8rem;background:var(--surface-2);white-space:nowrap}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.cmp .muted{color:var(--muted);font-weight:400;font-size:.85rem}
+.cmp td.mono{font-family:"JetBrains Mono",monospace;font-size:.82rem}
+.cmp .ca{border-left:3px solid var(--api)} .cmp .cw{border-left:3px solid var(--web)} .cmp .cg{border-left:3px solid var(--gw)}
+.role{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.role.adm{background:var(--prod-soft);color:var(--prod);border-color:var(--prod)}
+.role.pub{background:var(--gw-soft);color:var(--gw);border-color:var(--gw)}
+
+.note{background:var(--brand-soft);border:1px solid var(--brand);border-radius:var(--radius);padding:18px 22px;margin-bottom:24px}
+.note b{display:block;margin-bottom:8px;color:var(--brand)}
+.note ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.95rem}
+.gw .note{background:var(--gw-soft);border-color:var(--gw)} .gw .note b{color:var(--gw)}
+.note.warn{background:var(--cf-soft);border-color:var(--cf)} .note.warn b{color:var(--cf)}
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.85rem;line-height:1.55;margin:0}
+pre code{font-size:1em}
+.pre-cap{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 36px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:1.5rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.85rem}
+@media (max-width:640px){.hero{padding:40px 0 28px}.section{padding:36px 0}.shots.screens{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top"><span>TX</span>tx-service-laos</a>
+    <div class="nav-links">
+      <a class="link" href="#architecture">สถาปัตยกรรม</a>
+      <a class="link" href="#api">API (Go)</a>
+      <a class="link" href="#web">Web Dashboard</a>
+      <a class="link" href="#gateway">LaoITPGW</a>
+      <a class="link" href="#deploy">Deploy / CI-CD</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="สลับธีม" aria-label="สลับธีม">◐</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1>tx-service-laos <em>Laos Payment Gateway</em></h1>
+    <p class="lead">ระบบตัวกลางรับ‑จ่ายเงินสำหรับประเทศลาว ทำหน้าที่เชื่อมระบบของลูกค้าเข้ากับ payment gateway <b>LaoITPGW / UniqPay</b> ครอบคลุมการฝากเงินด้วย LaoQR การถอนเงินข้ามธนาคาร การรับ webhook ยืนยันผล และแดชบอร์ดสำหรับผู้ดูแลระบบ ประกอบด้วย 2 โปรเจกต์: API server ภาษา Go และเว็บแดชบอร์ด Next.js</p>
+    <div class="pills">
+      <span class="pill a"><i></i>tx-service-laos-api · Go + Gin + PostgreSQL</span>
+      <span class="pill w"><i></i>tx-service-laos-web · Next.js 15 (Admin)</span>
+      <a class="pill g" href="#gateway"><i></i>LaoITPGW / UniqPay · RFC 9421</a>
+      <a class="pill d" href="#deploy"><i></i>Deploy · Docker · GitHub Actions → ECR</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>2</b><span>โปรเจกต์ (Go API · Next.js Web)</span></div>
+    <div class="stat"><b>38</b><span>REST endpoints</span></div>
+    <div class="stat"><b>7</b><span>โมเดลข้อมูล (Prisma + PostgreSQL)</span></div>
+    <div class="stat"><b>4</b><span>บทบาท: ADMIN · TREASURIST · MEMBER · API</span></div>
+    <div class="stat"><b>10</b><span>เมธอดเชื่อม LaoITPGW</span></div>
+  </div>
+
+  <section class="arch" id="architecture">
+    <h2>สถาปัตยกรรมระบบ</h2>
+    <p>เว็บแดชบอร์ดไม่เรียก API ตรงจากเบราว์เซอร์ แต่ผ่าน Server Actions ของ Next.js (ซ่อน <code>API_BASE_URL</code> ไว้ฝั่งเซิร์ฟเวอร์) · API แยกเป็น 2 binary: <b>Internal API</b> ให้บริการแดชบอร์ดและระบบลูกค้า และ <b>LaoIT API</b> รับเฉพาะ webhook จาก gateway ที่ตรวจลายเซ็น RFC 9421 · ทุกคำขอที่ส่งออกไปหา gateway ถูกเซ็นด้วย ed25519</p>
+    <svg viewBox="0 0 1100 480" role="img" aria-label="แผนภาพสถาปัตยกรรม tx-service-laos">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+      </defs>
+
+      <!-- web client -->
+      <g>
+        <rect x="50" y="26" width="320" height="100" rx="14" fill="var(--web-soft)" stroke="var(--web)" stroke-width="2"/>
+        <text x="210" y="62" text-anchor="middle" font-size="19" font-weight="700" fill="var(--text)">tx-service-laos-web</text>
+        <text x="210" y="86" text-anchor="middle" font-size="13" fill="var(--muted)">Next.js 15 · React 19 · Tailwind</text>
+        <text x="210" y="106" text-anchor="middle" font-size="13" fill="var(--muted)">แดชบอร์ดผู้ดูแล (ADMIN / TREASURIST / MEMBER)</text>
+      </g>
+
+      <!-- external gateway -->
+      <g>
+        <rect x="730" y="26" width="320" height="100" rx="14" fill="var(--gw-soft)" stroke="var(--gw)" stroke-width="2"/>
+        <text x="890" y="62" text-anchor="middle" font-size="19" font-weight="700" fill="var(--text)">LaoITPGW / UniqPay</text>
+        <text x="890" y="86" text-anchor="middle" font-size="13" fill="var(--muted)">Payment gateway ภายนอก (ธนาคารลาว)</text>
+        <text x="890" y="106" text-anchor="middle" font-size="13" fill="var(--muted)">LaoQR · Withdraw transfer · Webhook</text>
+      </g>
+
+      <!-- api core -->
+      <g>
+        <rect x="300" y="186" width="500" height="124" rx="14" fill="var(--api-soft)" stroke="var(--api)" stroke-width="2"/>
+        <text x="550" y="220" text-anchor="middle" font-size="19" font-weight="700" fill="var(--text)">tx-service-laos-api</text>
+        <text x="550" y="242" text-anchor="middle" font-size="13" fill="var(--muted)">Go 1.22 · Gin · Prisma Client Go · Swagger</text>
+        <rect x="322" y="256" width="216" height="38" rx="9" fill="var(--surface)" stroke="var(--api)" stroke-width="1.2"/>
+        <text x="430" y="272" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">cmd/api — Internal API</text>
+        <text x="430" y="287" text-anchor="middle" font-size="10" fill="var(--muted)">JWT · API key · 37 endpoints</text>
+        <rect x="562" y="256" width="216" height="38" rx="9" fill="var(--surface)" stroke="var(--api)" stroke-width="1.2"/>
+        <text x="670" y="272" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">cmd/laoitapi — LaoIT API</text>
+        <text x="670" y="287" text-anchor="middle" font-size="10" fill="var(--muted)">รับ webhook · verify RFC 9421</text>
+      </g>
+
+      <!-- web -> api -->
+      <path d="M210 126 C210 160 300 156 350 186" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <text x="120" y="168" font-size="12" fill="var(--muted)">HTTPS · Server Actions</text>
+      <text x="120" y="184" font-size="12" fill="var(--muted)">JWT ใน cookie auth-token</text>
+
+      <!-- api -> gateway (outbound signed) -->
+      <path d="M760 186 C800 152 830 140 880 126" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+      <text x="800" y="176" font-size="12" fill="var(--muted)">REST + ลายเซ็น ed25519</text>
+      <!-- gateway -> laoit api (webhook) -->
+      <path d="M900 126 C900 176 830 206 800 246" fill="none" stroke="var(--gw)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar)"/>
+      <text x="906" y="196" font-size="12" fill="var(--gw)">webhook</text>
+      <text x="906" y="212" font-size="12" fill="var(--gw)">/v1/webhook/transaction</text>
+
+      <!-- infra row -->
+      <g>
+        <rect x="50" y="392" width="210" height="64" rx="12" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/>
+        <text x="155" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">PostgreSQL</text>
+        <text x="155" y="440" text-anchor="middle" font-size="11" fill="var(--muted)">Prisma Client Go · TZ Asia/Bangkok</text>
+      </g>
+      <g>
+        <rect x="290" y="392" width="190" height="64" rx="12" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/>
+        <text x="385" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">Redis 7</text>
+        <text x="385" y="440" text-anchor="middle" font-size="11" fill="var(--muted)">ตัวนับเลือกบัญชี (ปิดได้)</text>
+      </g>
+      <g>
+        <rect x="510" y="392" width="200" height="64" rx="12" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2"/>
+        <text x="610" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">AWS SQS (FIFO)</text>
+        <text x="610" y="440" text-anchor="middle" font-size="11" fill="var(--muted)">แจ้งผลธุรกรรมออกนอกระบบ</text>
+      </g>
+      <g>
+        <rect x="740" y="392" width="310" height="64" rx="12" fill="var(--surface)" stroke="var(--line-2)" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="895" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">cmd/sqs — Consumer</text>
+        <text x="895" y="440" text-anchor="middle" font-size="11" fill="var(--muted)">อ่านคิวและประมวลผลข้อความธุรกรรม</text>
+      </g>
+
+      <path d="M400 310 L200 392" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <path d="M480 310 L400 392" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      <path d="M600 310 L608 392" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+      <path d="M710 424 L740 424" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+    </svg>
+  </section>
+</div>
+
+<!-- ===================== API ===================== -->
+<section class="section api" id="api">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Backend · REST API (Go)</span>
+        <h2>tx-service-laos-api — Payment Gateway API</h2>
+        <p>แกนกลางของระบบ ให้บริการ REST API ภายใต้ <code>/api/{SERVER_NAME}/v1/*</code> ทำหน้าที่ออกคำสั่งฝาก‑ถอนไปยัง LaoITPGW บันทึกธุรกรรมลง PostgreSQL รับ webhook ยืนยันผล กระจายเหตุการณ์ออก SQS และให้ข้อมูลแก่แดชบอร์ด ป้องกันด้วย JWT สำหรับผู้ใช้ และ API key สำหรับระบบลูกค้า</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Go</b> 1.22 (toolchain 1.24)</li>
+          <li><b>Gin</b> 1.9</li>
+          <li><b>Prisma Client Go</b> 0.47</li>
+          <li><b>PostgreSQL</b></li>
+          <li>golang-jwt/jwt v5</li>
+          <li>ozzo-validation v4</li>
+          <li>go-redis v9</li>
+          <li>aws-sdk-go-v2 (SQS)</li>
+          <li>common-fate/httpsig (RFC 9421)</li>
+          <li>shopspring/decimal</li>
+          <li>swaggo (Swagger / OpenAPI)</li>
+          <li>caarlos0/env v11</li>
+          <li>samber/lo · google/uuid</li>
+          <li>testify</li>
+          <li>Docker (4 image)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL</b><span>ฐานข้อมูลหลักผ่าน Prisma Client Go · 7 migration · คอลัมน์เวลาเป็น <code>TIMESTAMPTZ(3)</code> เก็บเป็น UTC · container ตั้ง timezone <code>Asia/Bangkok</code></span></div></li>
+          <li><span class="sic">🏦</span><div><b>LaoITPGW / UniqPay</b><span>gateway ภายนอก 10 เมธอด (สร้าง/อ่าน LaoQR, ยกเลิก, รายการธุรกรรม, รายชื่อธนาคาร, ดูบัญชี, ค้นหาบัญชีปลายทาง, โอน, ส่ง webhook ซ้ำ) timeout 30 วินาที</span></div></li>
+          <li><span class="sic">⚡</span><div><b>Redis 7</b><span>เก็บตัวนับยอดฝาก‑ถอนรายวันต่อบัญชี เพื่อเลือกบัญชีที่โหลดน้อยที่สุดแบบ atomic · เป็น optional หากปิดหรือต่อไม่ได้จะถอยไปใช้ SQL อัตโนมัติ</span></div></li>
+          <li><span class="sic">📨</span><div><b>AWS SQS (FIFO)</b><span>ส่งเหตุการณ์ธุรกรรมออกให้ระบบปลายทาง จัดกลุ่มข้อความตามเลขบัญชี และกันข้อความซ้ำด้วย paymentRefId · ใช้ LocalStack แทนตอนพัฒนา</span></div></li>
+          <li><span class="sic">🧪</span><div><b>WireMock</b><span>จำลองการตอบกลับของ gateway สำหรับพัฒนาและทดสอบ (มี stub เคสสำเร็จและเคสล้มเหลว)</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>โมดูลหลัก</h3>
+        <ul class="feat">
+          <li><b>Auth</b> ออก JWT และอ่านข้อมูลจาก token ปัจจุบัน</li>
+          <li><b>Dashboard</b> รายการธุรกรรม/ฝาก/ถอน/webhook log พร้อมค้นหา‑กรอง‑แบ่งหน้า · สถิติรายวัน · ข้อมูลกราฟการเงิน</li>
+          <li><b>Account</b> จัดการผู้ใช้ บทบาท สถานะ รหัสผ่าน และออก API token ใหม่</li>
+          <li><b>Setting</b> สวิตช์เปิด‑ปิดฟีเจอร์ฝาก‑ถอน และสวิตช์ Redis ของตัวเลือกบัญชี</li>
+          <li><b>Deposit</b> สร้างรายการฝากแบบ LaoQR และอ่านสถานะ</li>
+          <li><b>Withdraw</b> โอนออก · รายชื่อธนาคาร · ค้นหาบัญชีปลายทาง</li>
+          <li><b>Transaction</b> รายการ · รายละเอียด · ยกเลิก</li>
+          <li><b>UniqpayBankAccount</b> CRUD บัญชีรับเงิน + ตัวเลือกบัญชีอัตโนมัติ</li>
+          <li><b>Laos</b> ดึงข้อมูลบัญชีและธุรกรรมจาก gateway</li>
+          <li><b>Webhook</b> รับผลจาก gateway (ตรวจลายเซ็น) และบังคับเปลี่ยนสถานะโดยผู้ดูแล</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid3 two">
+      <div class="card">
+        <h3><span class="ic">🔐</span>การยืนยันตัวตนและสิทธิ์</h3>
+        <ul class="feat">
+          <li><b>JWT</b> สำหรับผู้ใช้แดชบอร์ด อายุตามค่า <code>JWT_DURATION</code> (ค่าเริ่มต้น 24 ชม.)</li>
+          <li><b>API key</b> สำหรับระบบลูกค้า — เก็บเฉพาะค่าแฮช <code>sha256(HASH_PEPPER + ":" + token)</code> ในคอลัมน์ <code>Account.tokenHash</code></li>
+          <li><b>EitherAuthMiddleware</b> เส้นทางฝาก‑ถอน‑ธุรกรรม รับได้ทั้ง JWT และ API key</li>
+          <li><b>RequireRoles</b> จำกัดสิทธิ์ระดับ endpoint ตาม 4 บทบาท</li>
+          <li><b>RFC 9421</b> เซ็นคำขอออกด้วย private key ของเรา และตรวจ webhook ขาเข้าด้วย public key ของ gateway</li>
+          <li><b>CORS whitelist</b> กำหนดผ่านตัวแปร <code>CORS</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">📦</span>แพ็กเกจร่วม (<code>pkg/</code>)</h3>
+        <ul class="tech">
+          <li><b>errx</b> + <b>apix</b> รหัสข้อผิดพลาด</li>
+          <li><b>ginx</b> binder · middleware</li>
+          <li><b>filterx</b> ตัวกรองคิวรี</li>
+          <li><b>paginationx</b> แบ่งหน้า</li>
+          <li><b>httpsigx</b> RFC 9421</li>
+          <li><b>jwt</b> · <b>hash</b></li>
+          <li><b>masking</b> ปิดข้อมูลใน log</li>
+          <li><b>logger</b> slog + ระดับ log</li>
+          <li><b>redisx</b> · <b>sqsx</b></li>
+          <li><b>httpx</b> debug round-tripper</li>
+          <li><b>timex</b> · <b>common</b> ชนิดวันเวลา</li>
+          <li><b>validator</b> ตัวอย่างการตรวจข้อมูล</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🗄</span>โมเดลข้อมูล</h3>
+        <ul class="feat">
+          <li><b>Transaction</b> บัญชีแยกประเภทรวมของทั้งฝากและถอน (<code>DEPOSIT</code> / <code>WITHDRAW</code>)</li>
+          <li><b>Deposit</b> · <b>Withdraw</b> รายละเอียดแยกตามชนิด ผูกกับ Transaction แบบ 1:1</li>
+          <li><b>WebhookLog</b> บันทึกทุกครั้งที่ gateway แจ้งผล พร้อม payload และรหัสตอบกลับ</li>
+          <li><b>UniqpayBankAccount</b> บัญชีรับ‑จ่ายเงินฝั่ง UniqPay (merchantId · terminalId · uid · recvId · bankCode)</li>
+          <li><b>Account</b> ผู้ใช้ระบบและ service account</li>
+          <li><b>Setting</b> ค่าตั้งระดับระบบและสวิตช์ฟีเจอร์</li>
+          <li>สถานะ: <code>PENDING</code> · <code>SUCCESS</code> · <code>FAILED</code> · <code>EXPIRED</code> · <code>CANCELED</code> · <code>SETTLED</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>รายการ Endpoint</h3><span>ฐาน <code>/api/{SERVER_NAME}/v1</code> — 37 เส้นใน Internal API และ 1 เส้นใน LaoIT API</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>กลุ่ม</th><th>Endpoint</th><th>สิทธิ์</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td>auth</td><td class="mono">POST /auth</td><td><span class="role pub">public</span></td><td>เข้าสู่ระบบ ออก JWT</td></tr>
+          <tr><td></td><td class="mono">GET /auth</td><td><span class="role">JWT</span></td><td>อ่านข้อมูลผู้ใช้จาก token ปัจจุบัน</td></tr>
+
+          <tr class="ca"><td>dashboard</td><td class="mono">GET /dashboard/transactions</td><td><span class="role">JWT</span></td><td>รายการธุรกรรม (ค้นหา · กรอง · แบ่งหน้า)</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/deposits</td><td><span class="role">JWT</span></td><td>รายการฝาก</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/withdraws</td><td><span class="role">JWT</span></td><td>รายการถอน</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/webhook-logs</td><td><span class="role">JWT</span></td><td>ประวัติการรับ webhook</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/daily-statistics</td><td><span class="role">JWT</span></td><td>สถิติวันนี้ เทียบกับเมื่อวาน</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/financial-data/charts</td><td><span class="role">JWT</span></td><td>ข้อมูลกราฟรายเดือน</td></tr>
+
+          <tr class="ca"><td>account</td><td class="mono">GET · PUT /dashboard/account</td><td><span class="role">JWT</span></td><td>โปรไฟล์ของผู้ใช้ที่ล็อกอิน</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/accounts</td><td><span class="role">JWT</span></td><td>รายชื่อผู้ใช้ทั้งหมด</td></tr>
+          <tr><td></td><td class="mono">POST /dashboard/accounts</td><td><span class="role adm">ADMIN</span></td><td>สร้างผู้ใช้ใหม่</td></tr>
+          <tr><td></td><td class="mono">GET /dashboard/accounts/:id</td><td><span class="role">JWT</span></td><td>รายละเอียดผู้ใช้</td></tr>
+          <tr><td></td><td class="mono">PUT /dashboard/accounts/:id/info</td><td><span class="role">JWT</span></td><td>แก้ข้อมูลผู้ใช้</td></tr>
+          <tr><td></td><td class="mono">PUT /dashboard/accounts/:id/password</td><td><span class="role">JWT</span></td><td>เปลี่ยนรหัสผ่าน</td></tr>
+          <tr><td></td><td class="mono">PUT /dashboard/accounts/:id/status</td><td><span class="role adm">ADMIN</span></td><td>เปิด‑ปิดการใช้งานผู้ใช้</td></tr>
+          <tr><td></td><td class="mono">PUT /dashboard/accounts/:id/token-hash</td><td><span class="role adm">ADMIN</span></td><td>ออก API token ใหม่ (ยกเลิกตัวเดิมทันที)</td></tr>
+          <tr><td></td><td class="mono">DELETE /dashboard/accounts/:id</td><td><span class="role adm">ADMIN</span></td><td>ปิดการใช้งานผู้ใช้ (soft delete)</td></tr>
+
+          <tr class="ca"><td>setting</td><td class="mono">GET /dashboard/setting/config</td><td><span class="role">JWT</span></td><td>อ่านค่าตั้งระบบและสถานะสวิตช์</td></tr>
+          <tr><td></td><td class="mono">PUT /dashboard/setting/</td><td><span class="role adm">ADMIN</span></td><td>แก้ค่าตั้งระบบ · สวิตช์ฝาก‑ถอน · สวิตช์ Redis</td></tr>
+
+          <tr class="ca"><td>transactions</td><td class="mono">GET /transactions</td><td><span class="role">JWT / API key</span></td><td>รายการธุรกรรม</td></tr>
+          <tr><td></td><td class="mono">GET /transactions/:txnId</td><td><span class="role">JWT / API key</span></td><td>รายละเอียดธุรกรรม</td></tr>
+          <tr><td></td><td class="mono">POST /transactions/cancel/:txnId</td><td><span class="role adm">ADMIN · TREASURIST · API</span></td><td>ยกเลิกธุรกรรม</td></tr>
+
+          <tr class="ca"><td>deposits</td><td class="mono">POST /deposits/laoQr</td><td><span class="role adm">ADMIN · TREASURIST · API</span></td><td>สร้างรายการฝากและ QR สำหรับชำระ</td></tr>
+          <tr><td></td><td class="mono">GET /deposits/laoQr/:id</td><td><span class="role">JWT / API key</span></td><td>อ่านสถานะรายการฝาก (ใช้ polling)</td></tr>
+
+          <tr class="ca"><td>withdraws</td><td class="mono">POST /withdraws/transfer</td><td><span class="role adm">ADMIN · TREASURIST · API</span></td><td>สั่งโอนเงินออกไปบัญชีปลายทาง</td></tr>
+          <tr><td></td><td class="mono">GET /withdraws/banks</td><td><span class="role">JWT / API key</span></td><td>รายชื่อธนาคารที่โอนได้</td></tr>
+          <tr><td></td><td class="mono">POST /withdraws/accounts/search</td><td><span class="role">JWT / API key</span></td><td>ตรวจชื่อบัญชีปลายทางก่อนโอน</td></tr>
+
+          <tr class="ca"><td>laos</td><td class="mono">GET /laos/bank-accounts</td><td><span class="role">JWT</span></td><td>บัญชีทั้งหมดพร้อมยอดคงเหลือจาก gateway</td></tr>
+          <tr><td></td><td class="mono">GET · POST /laos/uniqpay-bank-accounts</td><td><span class="role">JWT</span></td><td>รายการและสร้างบัญชีรับเงิน</td></tr>
+          <tr><td></td><td class="mono">GET · PUT · DELETE /laos/uniqpay-bank-accounts/:id</td><td><span class="role">JWT</span></td><td>อ่าน แก้ไข ลบบัญชีรับเงิน</td></tr>
+          <tr><td></td><td class="mono">GET /laos/transactions/</td><td><span class="role">JWT</span></td><td>รายการธุรกรรมฝั่ง gateway</td></tr>
+          <tr><td></td><td class="mono">GET /laos/transactions/:transactionId</td><td><span class="role">JWT</span></td><td>รายละเอียดธุรกรรมฝั่ง gateway</td></tr>
+
+          <tr class="cg"><td>webhook</td><td class="mono">POST /webhook/transaction</td><td><span class="role pub">RFC 9421</span></td><td>รับผลจาก gateway — อยู่ใน binary <code>cmd/laoitapi</code> แยกจาก Internal API</td></tr>
+          <tr><td></td><td class="mono">POST /webhook/transaction/force</td><td><span class="role adm">ADMIN · TREASURIST</span></td><td>บังคับเปลี่ยนสถานะ ต้องยืนยันรหัสผ่านซ้ำ</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gal-head"><h3>เอกสาร API (Swagger)</h3><span>เลื่อนดูภายในกรอบได้ · เปิดใช้ด้วย <code>ENABLE_SWAGGER_DOCS=true</code> ที่ <code>/swagger/index.html</code></span></div>
+    <div class="shots" data-group="api">
+      <figure class="shot tall"><div class="img"><img loading="lazy" src="capture-api/api-swagger.png" alt=""></div><figcaption><span class="n">1</span>Swagger UI — tx-service-laos v1.0.0<small>รายการ endpoint ทั้งหมดแยกตาม tag (auth · dashboard · deposits · withdraws · transactions · laos · webhook) พร้อม schema ของ <code>dto.*</code> และปุ่ม Authorize สำหรับ Bearer token</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WEB ===================== -->
+<section class="section web" id="web">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Web · Admin Dashboard</span>
+        <h2>tx-service-laos-web — แดชบอร์ดผู้ดูแล (Next.js)</h2>
+        <p>เว็บสำหรับทีมปฏิบัติการ ใช้ดูภาพรวมยอดฝาก‑ถอนรายวัน สร้างรายการฝากด้วย QR สั่งโอนออก ตรวจสอบธุรกรรมและ payload ดิบ ติดตามผลการส่ง webhook จัดการผู้ใช้และบัญชีธนาคาร พร้อมสวิตช์เปิด‑ปิดฟีเจอร์ระดับระบบ รองรับธีมสว่าง/มืด และแสดงเวลาเป็น GMT+7</p>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="ic">⚙</span>เทคโนโลยี</h3>
+        <ul class="tech">
+          <li><b>Next.js</b> 15.2 (App Router)</li>
+          <li><b>React</b> 19</li>
+          <li><b>TypeScript</b> 5.8</li>
+          <li><b>Tailwind CSS</b> 3.4</li>
+          <li><b>Bun</b> (build · runtime)</li>
+          <li>Chart.js 4 + react-chartjs-2</li>
+          <li>qrcode 1.5</li>
+          <li>Zod 3</li>
+          <li>@t3-oss/env-nextjs</li>
+          <li>date-fns 4</li>
+          <li>framer-motion 11</li>
+          <li>lucide-react · react-icons</li>
+          <li>next-themes (โหมดมืด)</li>
+          <li>react-hot-toast</li>
+          <li>clsx + tailwind-merge</li>
+          <li>create-t3-app 7.39.3</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">☁</span>บริการที่เชื่อมต่อ</h3>
+        <ul class="svc">
+          <li><span class="sic">🔗</span><div><b>tx-service-laos-api</b><span>เรียกผ่าน Server Actions เท่านั้น ฟังก์ชัน <code>client*</code> ฝั่งเบราว์เซอร์ห่อ <code>*Server*</code> ที่วิ่งบนเซิร์ฟเวอร์ ทำให้ <code>API_BASE_URL</code> ไม่รั่วออกฝั่ง client</span></div></li>
+          <li><span class="sic">🍪</span><div><b>Session (JWT)</b><span>เก็บ token ใน cookie <code>auth-token</code> ให้ฝั่งเซิร์ฟเวอร์อ่านได้ · ตรวจสิทธิ์อีกชั้นใน layout ของ <code>/dashboard</code></span></div></li>
+          <li><span class="sic">🔳</span><div><b>สร้าง QR ฝั่ง client</b><span>แปลง payload LaoQR จาก gateway เป็นภาพด้วยไลบรารี <code>qrcode</code> และดาวน์โหลดเป็นไฟล์ได้</span></div></li>
+          <li><span class="sic">📊</span><div><b>Chart.js</b><span>กราฟแท่งสองแกน (ยอดเงิน / จำนวนรายการ) เลือกเดือน‑ปี สลับชุดข้อมูล และส่งออกเป็น CSV หรือรูปภาพ</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">★</span>ฟีเจอร์โดยสรุป</h3>
+        <ul class="feat">
+          <li><b>เข้าสู่ระบบ</b> อีเมล + รหัสผ่าน พร้อมปุ่มเติมบัญชีทดลอง (ปิดได้ด้วย env)</li>
+          <li><b>ภาพรวม</b> ยอดฝาก‑ถอน‑ธุรกรรมของวันนี้ เทียบเปอร์เซ็นต์กับเมื่อวาน · สถานะสวิตช์ระบบ · ตารางบัญชีทั้งหมด · รีเฟรชอัตโนมัติ</li>
+          <li><b>กราฟการเงิน</b> เลือกเดือน‑ปี · สลับมุมมองและชุดข้อมูล · ส่งออก CSV / รูปภาพ</li>
+          <li><b>ฝากเงิน</b> รายการ + ตัวกรอง/ตัวกรองด่วน · สร้างรายการฝาก → แสดง QR → ติดตามสถานะอัตโนมัติ → ยกเลิกได้</li>
+          <li><b>ถอนเงิน</b> รายการ + ตัวกรอง · สร้างรายการถอนแบบ 2 ขั้น ต้องตรวจชื่อบัญชีปลายทางก่อนยืนยัน</li>
+          <li><b>ธุรกรรม</b> รายการ + ตัวกรอง · หน้ารายละเอียดเปิดดู payload ดิบของ gateway ได้</li>
+          <li><b>Webhook logs</b> การ์ดสรุป (ทั้งหมด/สำเร็จ/ล้มเหลว/รอ) · ตัวกรองตามสถานะ‑เหตุการณ์‑รหัสตอบกลับ · โมดัล 3 แท็บ</li>
+          <li><b>ผู้ใช้งาน</b> CRUD · บทบาท · เปลี่ยนรหัสผ่าน · ออก API token ใหม่โดยยืนยันรหัสผ่าน</li>
+          <li><b>บัญชีธนาคาร UniqPay</b> CRUD + โมดัลรายละเอียด</li>
+          <li><b>ตั้งค่าระบบ</b> สวิตช์ฝาก‑ถอน · สวิตช์ Redis ของตัวเลือกบัญชี · ข้อมูล Swagger และเซอร์วิส</li>
+          <li><b>ทั่วทั้งระบบ</b> ธีมสว่าง/มืด · แสดงเวลา GMT+7 · ปิดบังเลขบัญชีพร้อมปุ่มเปิดดู · ส่งออก CSV</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head"><h3>ภาพหน้าจอแดชบอร์ด</h3><span>27 หน้าจอ · คลิกเพื่อขยาย</span></div>
+    <div class="shots screens" data-group="web">
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-2026-09-23-02_29_58.png" alt=""></div><figcaption><span class="n">1</span>เข้าสู่ระบบ (ธีมมืด)<small>Laos PGW — อีเมล + รหัสผ่าน พร้อมปุ่มเติมบัญชีทดลอง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-2026-09-23-02_30_54.png" alt=""></div><figcaption><span class="n">2</span>เข้าสู่ระบบ (ธีมสว่าง)<small>หน้าเดียวกันในโหมดสว่าง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-2026-09-23-02_31_20.png" alt=""></div><figcaption><span class="n">3</span>ภาพรวม — ยังไม่มีข้อมูล (สว่าง)<small>สถิติวันนี้ · สวิตช์ระบบ · ยังไม่ได้ผูกบัญชีธนาคาร</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-2026-09-23-02_31_46.png" alt=""></div><figcaption><span class="n">4</span>ภาพรวม — ยังไม่มีข้อมูล (มืด)<small>รองรับโหมดมืดทั้งระบบ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-2026-09-23-02_55_37.png" alt=""></div><figcaption><span class="n">5</span>ภาพรวม — มีข้อมูลจริง<small>ยอดฝาก 102,100 LAK · ถอน 3,000 LAK · 3 บัญชี JDB · รีเฟรชทุก 10 วินาที</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-chart-2026-09-23-02_55_19.png" alt=""></div><figcaption><span class="n">6</span>กราฟการเงิน<small>กราฟสองแกนรายวัน · เลือกชุดข้อมูล · ส่งออก CSV / รูปภาพ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-deposits-2026-09-23-02_50_40.png" alt=""></div><figcaption><span class="n">7</span>รายการฝากเงิน + ตัวกรอง<small>สถานะ · ช่วงวัน (GMT+7) · ช่วงจำนวนเงิน · ตัวกรองด่วน · ส่งออก CSV</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-deposits-2026-09-23-02_51_03.png" alt=""></div><figcaption><span class="n">8</span>สร้างรายการฝาก — รอชำระ<small>QR สำหรับสแกน · 1,000 LAK · Payment Ref <code>DEP_…</code> · ยกเลิกได้</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-deposits-2026-09-23-02_51_15.png" alt=""></div><figcaption><span class="n">9</span>ชำระเงินสำเร็จ<small>สถานะเปลี่ยนเองจากการติดตามสถานะอัตโนมัติ ภายใน ~12 วินาที</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-deposits-2026-09-23-02_52_04.png" alt=""></div><figcaption><span class="n">10</span>รายละเอียดรายการฝาก<small>ไทม์ไลน์ · QR · payload ดิบจาก gateway (<code>billId</code> · <code>refId</code> · <code>laoQRData</code>)</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-withdraws-2026-09-23-02_52_17.png" alt=""></div><figcaption><span class="n">11</span>รายการถอนเงิน + ตัวกรอง<small>ปลายทางแสดงรหัสธนาคารและเลขบัญชีแบบปิดบัง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-withdraws-2026-09-23-02_52_42.png" alt=""></div><figcaption><span class="n">12</span>สร้างรายการถอน<small>ต้องกด “Verify Account” ตรวจชื่อบัญชีปลายทางก่อนจึงจะยืนยันได้</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-withdraws-2026-09-23-02_52_54.png" alt=""></div><figcaption><span class="n">13</span>ถอนเงินสำเร็จ<small>สรุปยอด · ค่าธรรมเนียม · Ticket ID · บัญชีต้นทาง‑ปลายทาง</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-transactions-2026-09-23-02_53_22.png" alt=""></div><figcaption><span class="n">14</span>รายการธุรกรรม<small>ค้นหาด้วย <code>WD_…</code> · ตัวกรองสถานะ ช่วงวัน ช่วงจำนวนเงิน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-transactions-2026-09-23-02_54_04.png" alt=""></div><figcaption><span class="n">15</span>รายละเอียดธุรกรรม<small>เปิดดู payload ดิบของ deposit / withdraw / transaction พร้อมปุ่มคัดลอก</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_45_13.png" alt=""></div><figcaption><span class="n">16</span>Webhook logs<small>การ์ดสรุป · อัตราสำเร็จ · เหตุการณ์ <code>payment.success</code> · ขนาด payload</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_46_06.png" alt=""></div><figcaption><span class="n">17</span>ตัวกรอง webhook logs<small>สถานะ · ประเภทเหตุการณ์ · รหัสตอบกลับ · ช่วงวัน + ตัวกรองด่วน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_48_27.png" alt=""></div><figcaption><span class="n">18</span>ส่ง webhook สำเร็จ<small>รายการเดิมเปลี่ยนเป็น SUCCESS อัตราสำเร็จขึ้นเป็น 100%</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_49_09.png" alt=""></div><figcaption><span class="n">19</span>รายละเอียด webhook — แท็บ Details<small>Log ID · Transaction ID · เหตุการณ์ · รหัสตอบกลับ · ขนาด payload</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_48_55.png" alt=""></div><figcaption><span class="n">20</span>รายละเอียด webhook — แท็บ Request Payload<small>JSON ที่ gateway ส่งเข้ามาทั้งก้อน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_54_48.png" alt=""></div><figcaption><span class="n">21</span>Webhook logs หลังใช้งานจริง<small>4 รายการ อัตราสำเร็จ 75% เหลือรอ 1 รายการ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-webhook-logs-2026-09-23-02_55_01.png" alt=""></div><figcaption><span class="n">22</span>Payload ของ <code>payment.success</code><small>amount · billId · currency LAK · method LAOQR · mid · status</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-accounts-2026-09-23-02_41_06.png" alt=""></div><figcaption><span class="n">23</span>จัดการผู้ใช้งาน<small>บทบาท ADMIN และ API (service account ของระบบลูกค้า) · แก้ไข · เปลี่ยนรหัส · ออก token ใหม่</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-accounts-2026-09-23-02_41_28.png" alt=""></div><figcaption><span class="n">24</span>ออก API token ใหม่<small>เตือนว่า token เดิมถูกยกเลิกทันที และต้องยืนยันรหัสผ่านก่อน</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-uniqpay-bank-accounts-2026-09-23-02_40_19.png" alt=""></div><figcaption><span class="n">25</span>บัญชีธนาคาร UniqPay<small>สรุปจำนวนบัญชี · ตารางชื่อ เลขบัญชี ธนาคาร Merchant ID UID สถานะ</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-uniqpay-bank-accounts-2026-09-23-02_40_49.png" alt=""></div><figcaption><span class="n">26</span>รายละเอียดบัญชี (ธีมมืด)<small>Account ID · Bank Code · Currency · Merchant ID · Terminal ID · UID · Recv ID</small></figcaption></figure>
+      <figure class="shot"><div class="img"><img loading="lazy" src="capture-web/screencapture-localhost-4000-dashboard-settings-2026-09-23-02_39_44.png" alt=""></div><figcaption><span class="n">27</span>ตั้งค่าระบบ<small>สวิตช์ฝาก · สวิตช์ถอน · สวิตช์ Bank Selector (Redis) · ข้อมูล Swagger และเซอร์วิส</small></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GATEWAY ===================== -->
+<section class="section gw" id="gateway">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Integration · LaoITPGW / UniqPay</span>
+        <h2>การเชื่อมต่อ payment gateway</h2>
+        <p>หัวใจของระบบคือการคุยกับ gateway ภายนอกอย่างปลอดภัยและตรวจสอบย้อนหลังได้ ทุกคำขอขาออกถูกเซ็นด้วย HTTP Message Signatures (RFC 9421) ทุก webhook ขาเข้าถูกตรวจลายเซ็นก่อนรับ และทุกครั้งที่สร้างรายการฝาก‑ถอนระบบจะเลือกบัญชีรับเงินที่โหลดน้อยที่สุดให้อัตโนมัติ</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#gw-client">Gateway client</a><a href="#gw-deposit">Flow ฝากเงิน</a><a href="#gw-selector">ตัวเลือกบัญชี</a><a href="#gw-async">SQS</a>
+    </div>
+
+    <div class="grid3" id="gw-client">
+      <div class="card">
+        <h3><span class="ic">🔌</span>Gateway client</h3>
+        <ul class="feat">
+          <li>อยู่ที่ <code>adapter/laoitpgw</code> — ทุกเมธอดวิ่งผ่านฟังก์ชันกลาง <code>doRequest</code> เดียว</li>
+          <li>Base URL ตั้งด้วย <code>LAOIT_PGW_URL</code> · timeout 30 วินาที</li>
+          <li>แปลง error ของ gateway เป็นชนิดของเราเอง (<code>apiError</code> / <code>apiMsgError</code>)</li>
+          <li>มีโหมด debug log สำหรับตรวจ request‑response จริง (<code>HTTP_CLIENT_DEBUG_LOG</code>)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🛡</span>ความปลอดภัย</h3>
+        <ul class="feat">
+          <li><b>เซ็นขาออก</b> ed25519 ตาม RFC 9421 ด้วย <code>HTTPSIG_PRIVATE_KEY</code> + <code>KEY_ID</code> + <code>TAG</code></li>
+          <li><b>ตรวจขาเข้า</b> webhook ต้องผ่าน <code>HTTPSIG_VERIFY_PUBLIC_KEY</code> ของ gateway ก่อนเข้าถึง handler</li>
+          <li>มีเครื่องมือ <code>tools/keygen</code> สร้างคู่กุญแจ (ed25519 / ecdsa-p256 / rsa-pss) สำหรับเครื่องพัฒนา</li>
+          <li>แยก binary ทำให้ endpoint webhook ไม่อยู่ในเซิร์ฟเวอร์เดียวกับ API ของแดชบอร์ด</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">📨</span>Async / SQS</h3>
+        <ul class="feat">
+          <li>เมื่อธุรกรรมถึงสถานะปลายทาง ระบบ publish ข้อความเข้า <b>SQS FIFO</b></li>
+          <li>จัดกลุ่มข้อความตามเลขบัญชี และกันข้อความซ้ำด้วย <code>paymentRefId</code></li>
+          <li>ข้อความมี <code>txnId</code> · <code>paymentRefId</code> · <code>status</code> · <code>method</code> · <code>amount</code> · <code>payee</code> · <code>payor</code></li>
+          <li>มี consumer ตัวอย่างที่ <code>cmd/sqs</code> และ producer ทดสอบที่ <code>cmd/sqs/example_producer</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="darch" id="gw-deposit">
+      <h3>Flow การฝากเงินด้วย LaoQR</h3>
+      <p>แถวบนคือขาสร้างรายการ แถวล่างคือขายืนยันผลที่ gateway แจ้งกลับมา สถานะบนแดชบอร์ดเปลี่ยนเองจากการ polling ไม่ต้องรีเฟรชหน้า</p>
+      <svg viewBox="0 0 1000 300" role="img" aria-label="แผนภาพลำดับการฝากเงินด้วย LaoQR">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+          <marker id="a2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--gw)"/></marker>
+        </defs>
+
+        <!-- row 1 -->
+        <rect class="box w" x="23" y="36" width="170" height="64" rx="10"/>
+        <text class="lbl" x="108" y="62" text-anchor="middle">แดชบอร์ด</text>
+        <text class="sub" x="108" y="80" text-anchor="middle">กรอกยอดเงิน · กดสร้าง</text>
+
+        <rect class="box a" x="219" y="36" width="170" height="64" rx="10"/>
+        <text class="lbl" x="304" y="58" text-anchor="middle">Internal API</text>
+        <text class="sub" x="304" y="74" text-anchor="middle">POST /v1/deposits/laoQr</text>
+        <text class="sub" x="304" y="89" text-anchor="middle">ตรวจสวิตช์ฝากเงินก่อน</text>
+
+        <rect class="box a" x="415" y="36" width="170" height="64" rx="10"/>
+        <text class="lbl" x="500" y="58" text-anchor="middle">เลือกบัญชีรับเงิน</text>
+        <text class="sub" x="500" y="74" text-anchor="middle">SelectAndReserve()</text>
+        <text class="sub" x="500" y="89" text-anchor="middle">จองยอดไว้ที่บัญชีที่เลือก</text>
+
+        <rect class="box g" x="611" y="36" width="170" height="64" rx="10"/>
+        <text class="lbl" x="696" y="58" text-anchor="middle">LaoITPGW</text>
+        <text class="sub" x="696" y="74" text-anchor="middle">POST /payments/laoQr</text>
+        <text class="sub" x="696" y="89" text-anchor="middle">เซ็นด้วย ed25519</text>
+
+        <rect class="box d" x="807" y="36" width="170" height="64" rx="10"/>
+        <text class="lbl" x="892" y="58" text-anchor="middle">บันทึก + คืน QR</text>
+        <text class="sub" x="892" y="74" text-anchor="middle">Transaction + Deposit</text>
+        <text class="sub" x="892" y="89" text-anchor="middle">สถานะ PENDING</text>
+
+        <path class="edge" d="M193 68 L214 68" marker-end="url(#a2)"/>
+        <path class="edge" d="M389 68 L410 68" marker-end="url(#a2)"/>
+        <path class="edge" d="M585 68 L606 68" marker-end="url(#a2)"/>
+        <path class="edge" d="M781 68 L802 68" marker-end="url(#a2)"/>
+
+        <!-- down -->
+        <path class="edge in" d="M892 100 L892 172" marker-end="url(#a2g)"/>
+        <text class="elbl" x="900" y="140">ผู้ใช้สแกนจ่าย</text>
+
+        <!-- row 2 -->
+        <rect class="box g" x="807" y="176" width="170" height="64" rx="10"/>
+        <text class="lbl" x="892" y="198" text-anchor="middle">gateway แจ้งผล</text>
+        <text class="sub" x="892" y="214" text-anchor="middle">POST /v1/webhook/transaction</text>
+        <text class="sub" x="892" y="229" text-anchor="middle">มีลายเซ็นแนบมา</text>
+
+        <rect class="box a" x="611" y="176" width="170" height="64" rx="10"/>
+        <text class="lbl" x="696" y="198" text-anchor="middle">LaoIT API</text>
+        <text class="sub" x="696" y="214" text-anchor="middle">ตรวจลายเซ็น RFC 9421</text>
+        <text class="sub" x="696" y="229" text-anchor="middle">ปฏิเสธถ้าไม่ผ่าน</text>
+
+        <rect class="box a" x="415" y="176" width="170" height="64" rx="10"/>
+        <text class="lbl" x="500" y="198" text-anchor="middle">อัปเดตสถานะ</text>
+        <text class="sub" x="500" y="214" text-anchor="middle">Transaction + Deposit</text>
+        <text class="sub" x="500" y="229" text-anchor="middle">เขียน WebhookLog</text>
+
+        <rect class="box d" x="219" y="176" width="170" height="64" rx="10"/>
+        <text class="lbl" x="304" y="198" text-anchor="middle">แจ้งออกนอกระบบ</text>
+        <text class="sub" x="304" y="214" text-anchor="middle">publish SQS FIFO</text>
+        <text class="sub" x="304" y="229" text-anchor="middle">คืนยอดจองถ้าไม่สำเร็จ</text>
+
+        <rect class="box w" x="23" y="176" width="170" height="64" rx="10"/>
+        <text class="lbl" x="108" y="198" text-anchor="middle">แดชบอร์ด</text>
+        <text class="sub" x="108" y="214" text-anchor="middle">GET /deposits/laoQr/:id</text>
+        <text class="sub" x="108" y="229" text-anchor="middle">polling จนถึงสถานะปลายทาง</text>
+
+        <path class="edge in" d="M802 208 L786 208" marker-end="url(#a2g)"/>
+        <path class="edge" d="M606 208 L590 208" marker-end="url(#a2)"/>
+        <path class="edge" d="M410 208 L394 208" marker-end="url(#a2)"/>
+        <path class="edge out" d="M214 208 L198 208" marker-end="url(#a2)"/>
+      </svg>
+      <div class="legend-row">
+        <span>ขาสร้างรายการ</span><span class="in">ขายืนยันผลจาก gateway</span><span class="out">อ่านสถานะกลับมาแสดง</span>
+      </div>
+    </div>
+
+    <div class="darch" id="gw-selector">
+      <h3>ตัวเลือกบัญชีรับเงินอัตโนมัติ (Bank Account Selector)</h3>
+      <p>ทุกครั้งที่สร้างรายการฝากหรือถอน ระบบต้องเลือกบัญชีที่รับยอดน้อยที่สุดของวันนั้น มีสองเส้นทางที่ให้ผลตรรกะเดียวกัน: เส้นทาง Redis เร็วและ atomic ส่วนเส้นทาง SQL เป็นตัวสำรอง สลับได้จากหน้าตั้งค่าโดยไม่ต้อง deploy ใหม่</p>
+      <svg viewBox="0 0 1000 400" role="img" aria-label="แผนภาพการเลือกบัญชีรับเงิน">
+        <defs>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+        </defs>
+
+        <rect class="box a" x="380" y="20" width="240" height="56" rx="10"/>
+        <text class="lbl" x="500" y="44" text-anchor="middle">SelectAndReserve(method, amount)</text>
+        <text class="sub" x="500" y="62" text-anchor="middle">เรียกจาก handler ฝากเงินและถอนเงิน</text>
+
+        <rect class="box" x="350" y="112" width="300" height="62" rx="10"/>
+        <text class="lbl" x="500" y="136" text-anchor="middle">อ่านสวิตช์จากฐานข้อมูล</text>
+        <text class="sub" x="500" y="152" text-anchor="middle">Setting.bankSelectorRedisEnabled</text>
+        <text class="sub" x="500" y="166" text-anchor="middle">แคชในหน่วยความจำ 30 วินาที</text>
+
+        <rect class="box d" x="60" y="220" width="280" height="62" rx="10"/>
+        <text class="lbl" x="200" y="244" text-anchor="middle">เส้นทาง SQL (สำรอง)</text>
+        <text class="sub" x="200" y="260" text-anchor="middle">GROUP BY หายอดรวมรายวัน</text>
+        <text class="sub" x="200" y="274" text-anchor="middle">ใช้ index tx_selector_lookup_idx</text>
+
+        <rect class="box g" x="660" y="220" width="280" height="62" rx="10"/>
+        <text class="lbl" x="800" y="244" text-anchor="middle">เส้นทาง Redis (หลัก)</text>
+        <text class="sub" x="800" y="260" text-anchor="middle">Lua script ทำงานเป็นหนึ่งคำสั่ง</text>
+        <text class="sub" x="800" y="274" text-anchor="middle">หาค่าน้อยสุด + จองยอดพร้อมกัน</text>
+
+        <rect class="box a" x="370" y="322" width="260" height="56" rx="10"/>
+        <text class="lbl" x="500" y="346" text-anchor="middle">บัญชีที่ถูกเลือก</text>
+        <text class="sub" x="500" y="364" text-anchor="middle">คืนยอดจองเมื่อรายการไม่สำเร็จ</text>
+
+        <path class="edge" d="M500 76 L500 108" marker-end="url(#a3)"/>
+        <path class="edge" d="M350 150 L206 150 L204 216" marker-end="url(#a3)"/>
+        <text class="elbl" x="214" y="142">สวิตช์ปิด</text>
+        <path class="edge" d="M650 150 L796 150 L798 216" marker-end="url(#a3)"/>
+        <text class="elbl" x="712" y="142">สวิตช์เปิด</text>
+        <path class="edge" d="M200 282 L200 350 L366 350" marker-end="url(#a3)"/>
+        <path class="edge" d="M800 282 L800 350 L634 350" marker-end="url(#a3)"/>
+        <path class="edge ext" d="M660 252 L344 252" marker-end="url(#a3)"/>
+        <text class="elbl" x="430" y="245">Redis ใช้งานไม่ได้ → ถอยไปใช้ SQL</text>
+      </svg>
+      <div class="legend-row">
+        <span>เส้นทางปกติ</span><span class="ext">เส้นทางสำรองเมื่อ Redis ล้ม</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>ลำดับชั้นการปิด Redis — หยาบไปละเอียด</b>
+      <ul>
+        <li><b>ระดับ deploy:</b> ตั้ง <code>REDIS_ENABLED=false</code> — ไม่สร้าง client เลย</li>
+        <li><b>ระดับ boot:</b> ping ไม่ผ่านตอนเริ่มระบบ — log เตือนแล้วไปใช้ SQL</li>
+        <li><b>ระดับ runtime:</b> ปิดสวิตช์ <code>bankSelectorRedisEnabled</code> จากหน้าตั้งค่า — ไม่ต้อง deploy ใหม่</li>
+        <li>ทั้งสามระดับลงเอยที่เส้นทาง SQL เดียวกัน ผลลัพธ์เชิงตรรกะเหมือนกัน</li>
+        <li><b>ข้อควรรู้:</b> สวิตช์มีแคช 30 วินาทีและแคชแยกตาม pod ช่วงสั้น ๆ หลังสลับอาจมี pod ที่ยังใช้เส้นทางเดิม · เมื่อเปิด Redis กลับหลังปิดไว้นาน ตัวนับอาจไม่ตรงและจะถูก warmup สร้างใหม่ให้เฉพาะวันที่ยังไม่เคย warm</li>
+      </ul>
+    </div>
+
+    <div class="gal-head" id="gw-async"><h3>เมธอดที่เรียกไปยัง gateway</h3><span>ทั้งหมด 10 เมธอด ผ่าน <code>doRequest</code> เดียวและเซ็นลายเซ็นทุกครั้ง</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>เมธอด</th><th>Endpoint ของ gateway</th><th>ใช้ตอนไหน</th></tr></thead>
+        <tbody>
+          <tr class="cg"><td>CreateLAOQR</td><td class="mono">POST /payments/laoQr</td><td>สร้างรายการฝากและขอ payload QR</td></tr>
+          <tr class="cg"><td>GetLAOQR</td><td class="mono">GET /payments/laoQr/{id}</td><td>อ่านสถานะรายการฝาก</td></tr>
+          <tr class="cg"><td>CancelTransaction</td><td class="mono">POST /payments/cancel</td><td>ยกเลิกรายการที่ยังไม่ชำระ</td></tr>
+          <tr class="cg"><td>ListTransactions</td><td class="mono">GET /transactions</td><td>ดึงรายการธุรกรรมฝั่ง gateway</td></tr>
+          <tr class="cg"><td>GetTransaction</td><td class="mono">GET /transactions/{id}</td><td>ดูรายละเอียดธุรกรรมฝั่ง gateway</td></tr>
+          <tr class="cg"><td>ListBanks</td><td class="mono">GET /withdraws/banks</td><td>รายชื่อธนาคารที่โอนออกได้</td></tr>
+          <tr class="cg"><td>ViewAccounts</td><td class="mono">POST /withdraws/accounts/view</td><td>ดูยอดคงเหลือของบัญชีเรา</td></tr>
+          <tr class="cg"><td>SearchWithdrawalDestinationAccount</td><td class="mono">POST /withdraws/accounts/search</td><td>ตรวจชื่อบัญชีปลายทางก่อนโอน</td></tr>
+          <tr class="cg"><td>Transfer</td><td class="mono">POST /withdraws/transfer</td><td>สั่งโอนเงินออก</td></tr>
+          <tr class="cg"><td>ResendWebhook</td><td class="mono">POST /transactions/hook/resend</td><td>ขอให้ gateway ส่ง webhook ซ้ำ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DEPLOY ===================== -->
+<section class="section deploy" id="deploy">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="tag">Local dev · Docker · CI/CD</span>
+        <h2>การพัฒนาและการ Deploy</h2>
+        <p>เครื่องพัฒนารัน dependency ทั้งหมดด้วย docker compose แยกไฟล์ต่อบริการ (PostgreSQL · Redis · LocalStack · WireMock) แล้วรัน Go จาก source ส่วนการขึ้นระบบใช้ GitHub Actions สร้าง image แล้ว push ขึ้น Amazon ECR</p>
+      </div>
+    </div>
+    <div class="subnav">
+      <a href="#dep-local">เครื่องพัฒนา</a><a href="#dep-images">Docker image</a><a href="#dep-cicd">CI/CD</a><a href="#dep-config">ตัวแปรสภาพแวดล้อม</a>
+    </div>
+
+    <div class="grid3" id="dep-local">
+      <div class="card">
+        <h3><span class="ic">🧰</span>Dependency ฝั่งเครื่องพัฒนา</h3>
+        <ul class="svc">
+          <li><span class="sic">🐘</span><div><b>PostgreSQL</b><span>image <code>postgres:latest</code> · พอร์ต 5432 · ตั้ง timezone <code>Asia/Bangkok</code> ทั้ง container และ server</span></div></li>
+          <li><span class="sic">⚡</span><div><b>Redis</b><span>image <code>redis:7-alpine</code> · พอร์ต 6379 · เปิด appendonly และตั้งรหัสผ่าน</span></div></li>
+          <li><span class="sic">☁️</span><div><b>LocalStack</b><span><code>localstack/localstack:3.8.1</code> · พอร์ต 4566 · จำลองเฉพาะ SQS</span></div></li>
+          <li><span class="sic">🧪</span><div><b>WireMock</b><span><code>wiremock/wiremock:3.9.2</code> · พอร์ต 8081 · จำลอง LaoITPGW ตาม stub ใน <code>deployments/wiremock/mappings</code></span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">▶</span>ขั้นตอนรันระบบ</h3>
+        <ol class="steps">
+          <li><code>cp .env.example .env</code> แล้ว <code>direnv allow</code></li>
+          <li><code>make up</code> <small>— เปิด dependency ทั้งหมดบน <code>app-network</code></small></li>
+          <li><code>make migrate-up</code> แล้ว <code>make seed</code> <small>— สร้างตารางและข้อมูลตั้งต้น</small></li>
+          <li><code>go run cmd/api/main.go</code> <small>— Internal API ที่พอร์ต 8080</small></li>
+          <li><code>go run cmd/laoitapi/main.go</code> <small>— ตัวรับ webhook</small></li>
+          <li><code>bun dev</code> ในโปรเจกต์เว็บ <small>— แดชบอร์ดที่พอร์ต 4000</small></li>
+        </ol>
+        <p class="fine">Swagger อยู่ที่ <code>http://localhost:8080/swagger/index.html</code> · สร้างคู่กุญแจสำหรับลายเซ็นด้วย <code>go run ./tools/keygen -algo ed25519 -out ./keys</code></p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">🧩</span>ข้อมูลตั้งต้นจาก seed</h3>
+        <ul class="feat">
+          <li>สร้างผู้ใช้ <code>ADMIN</code> และ service account บทบาท <code>API</code></li>
+          <li>API token ของ service account เก็บเป็นค่าแฮชพร้อม pepper — ต้องตรงกับที่ middleware คำนวณ</li>
+          <li>สร้างคู่ธุรกรรม‑รายการฝากตัวอย่างพร้อม payload QR แบบ EMVCo</li>
+          <li>รันบน staging ได้ผ่าน <code>scripts/docker-db.sh migrate-up</code> และ <code>scripts/docker-db.sh seed</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gal-head" id="dep-images"><h3>Docker image</h3><span>API สร้าง 4 image จาก Dockerfile แยกไฟล์ · เว็บสร้าง 1 image</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>Image</th><th>Dockerfile</th><th>ECR repository</th><th>หน้าที่</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td>api</td><td class="mono">Dockerfile.api</td><td class="mono">tx-service-laos/api</td><td>Internal API — แดชบอร์ดและระบบลูกค้า</td></tr>
+          <tr class="ca"><td>laoitApi</td><td class="mono">Dockerfile.laoitApi</td><td class="mono">tx-service-laos/laoitapi</td><td>ตัวรับ webhook จาก gateway</td></tr>
+          <tr class="ca"><td>cron</td><td class="mono">Dockerfile.cron</td><td class="mono">tx-service-laos/cron</td><td>งานตามกำหนดเวลา</td></tr>
+          <tr class="ca"><td>wiremock</td><td class="mono">Dockerfile.wiremock</td><td class="mono">tx-service-laos/wiremock</td><td>gateway จำลองสำหรับ environment ทดสอบ</td></tr>
+          <tr class="cw"><td>frontend</td><td class="mono">Dockerfile</td><td class="mono">tx-service-laos-frontend</td><td>แดชบอร์ด Next.js — build ด้วย Bun แล้วรันแบบ standalone ในสิทธิ์ผู้ใช้ทั่วไป</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid3 two" id="dep-cicd">
+      <div class="card">
+        <h3><span class="ic">⚙</span>CI/CD ของ API</h3>
+        <ul class="feat">
+          <li>ทริกเกอร์: push ขึ้น <code>main</code> · สร้าง tag · pull request · เรียกมือ</li>
+          <li><code>ci.yaml</code> รันเป็น matrix 4 service เรียก workflow กลาง <code>build-and-push.yml</code></li>
+          <li>ยืนยันตัวตนกับ AWS ด้วย OIDC (ไม่มี access key ค้างใน repo)</li>
+          <li>Push ขึ้น ECR ภูมิภาค <code>ap-southeast-1</code></li>
+          <li>Tag: <code>stable-&lt;sha7&gt;</code> เมื่อมาจาก <code>main</code> · <code>nightly-&lt;sha7&gt;</code> กรณีอื่น · พร้อมอัปเดต <code>latest</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="ic">⚙</span>CI/CD ของเว็บ</h3>
+        <ul class="feat">
+          <li><code>build.yml</code> ทำงานเมื่อ push หรือ PR เข้า <code>main</code></li>
+          <li>เรียก workflow ที่แชร์ไว้ภายนอก <code>Zap1Lab/aws-app-helm</code></li>
+          <li>Push ขึ้น ECR repo <code>tx-service-laos-frontend</code> ด้วย prefix <code>nightly-</code> แพลตฟอร์ม <code>linux/amd64</code></li>
+          <li>ส่ง <code>GIT_SHA</code> เข้าไปเป็น build arg</li>
+          <li><code>retag.yml</code> ทำงานเมื่อสร้าง git tag เพื่อเปลี่ยน image เดิมให้เป็นเวอร์ชันที่ตั้งชื่อไว้</li>
+          <li>มี <code>dev.yml</code> สำหรับ branch <code>develop</code> ที่ push ขึ้น Docker Hub แยกจากสาย ECR</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <b>ข้อสังเกตที่ควรตรวจก่อนขึ้นระบบจริง</b>
+      <ul>
+        <li>มีสาย build ทับซ้อนกันสามชุด (<code>ci.yaml</code> → ECR, <code>build.yml</code> → workflow ภายนอก, <code>dev.yml</code> → Docker Hub) ควรกำหนดให้ชัดว่า environment ไหนใช้สายไหน</li>
+        <li><code>scripts/docker-db.sh</code> ยังมีค่ารหัสผ่านตัวอย่างค้างอยู่ ต้องเปลี่ยนก่อนใช้กับฐานข้อมูลจริง</li>
+      </ul>
+    </div>
+
+    <div class="gal-head" id="dep-config"><h3>ตัวแปรสภาพแวดล้อมที่สำคัญ</h3><span>ค่าที่ทำเครื่องหมาย “จำเป็น” ถ้าไม่ตั้ง ระบบจะไม่สตาร์ท</span></div>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th>ตัวแปร</th><th>โปรเจกต์</th><th>จำเป็น</th><th>คำอธิบาย</th></tr></thead>
+        <tbody>
+          <tr class="ca"><td class="mono">NAME · PORT · CORS</td><td>API</td><td>PORT · CORS</td><td>ชื่อเซอร์วิสที่ใช้เป็นส่วนหนึ่งของ path · พอร์ต · รายการ origin ที่อนุญาต</td></tr>
+          <tr class="ca"><td class="mono">ENV · LOG_LEVEL</td><td>API</td><td>—</td><td><code>LOCAL</code> / <code>DEV</code> / <code>UAT</code> / <code>PROD</code> · ระดับ log</td></tr>
+          <tr class="ca"><td class="mono">DATABASE_URL</td><td>API</td><td>จำเป็น</td><td>สตริงเชื่อม PostgreSQL</td></tr>
+          <tr class="ca"><td class="mono">HASH_PEPPER · JWT_SECRET</td><td>API</td><td>จำเป็น</td><td>pepper สำหรับแฮช API token และ secret ของ JWT</td></tr>
+          <tr class="ca"><td class="mono">JWT_DURATION</td><td>API</td><td>—</td><td>อายุ token ค่าเริ่มต้น <code>24h</code></td></tr>
+          <tr class="ca"><td class="mono">SERVICE_NAME_ID</td><td>API</td><td>จำเป็น</td><td>รหัสเซอร์วิส ใช้เป็น namespace ของ key ใน Redis</td></tr>
+          <tr class="ca"><td class="mono">LAOIT_PGW_URL</td><td>API</td><td>จำเป็น</td><td>ปลายทางของ gateway (ชี้ไป WireMock ตอนพัฒนา)</td></tr>
+          <tr class="ca"><td class="mono">HTTPSIG_KEY_ID · ALGORITHM · TAG · PRIVATE_KEY</td><td>API</td><td>จำเป็น</td><td>กุญแจและพารามิเตอร์สำหรับเซ็นคำขอขาออก</td></tr>
+          <tr class="ca"><td class="mono">HTTPSIG_VERIFY_KEY_ID · TAG · PUBLIC_KEY</td><td>API</td><td>จำเป็น</td><td>กุญแจสาธารณะของ gateway สำหรับตรวจ webhook</td></tr>
+          <tr class="ca"><td class="mono">AWS_REGION · SQS_QUEUE_URL</td><td>API</td><td>จำเป็น</td><td>ภูมิภาคและคิว SQS ปลายทาง</td></tr>
+          <tr class="ca"><td class="mono">SQS_LOCALSTACK_ENABLED</td><td>API</td><td>—</td><td>ถ้า <code>true</code> จะข้ามการตรวจสิทธิ์เข้าถึงคิวตอนสตาร์ท</td></tr>
+          <tr class="ca"><td class="mono">REDIS_ENABLED · ADDRS · PASSWORD · DB · TLS_ENABLED · DIAL_TIMEOUT</td><td>API</td><td>—</td><td>ค่าเชื่อม Redis · ถ้าปิดหรือ ping ไม่ผ่าน ตัวเลือกบัญชีจะใช้ SQL</td></tr>
+          <tr class="ca"><td class="mono">ENABLE_SWAGGER_DOCS · SWAGGER_*</td><td>API</td><td>—</td><td>เปิดหน้า Swagger และค่าที่แสดงในเอกสาร</td></tr>
+          <tr class="ca"><td class="mono">DEVMODE_ENABLED · DEVMODE_AUTO_WEBHOOK_*</td><td>API</td><td>—</td><td>โหมดพัฒนา ยิง webhook กลับเข้าตัวเองเพื่อทดสอบ ไม่ควรเปิดบน production</td></tr>
+          <tr class="cw"><td class="mono">API_BASE_URL</td><td>Web</td><td>จำเป็น</td><td>ปลายทาง API — เป็นตัวแปรฝั่งเซิร์ฟเวอร์เท่านั้น ไม่มี <code>NEXT_PUBLIC_</code></td></tr>
+          <tr class="cw"><td class="mono">ENABLE_API_LOGGING · NEXT_PUBLIC_ENABLE_API_LOGGING</td><td>Web</td><td>—</td><td>เปิด log การเรียก API ฝั่งเซิร์ฟเวอร์และฝั่ง client</td></tr>
+          <tr class="cw"><td class="mono">NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS</td><td>Web</td><td>—</td><td>แสดงปุ่มเติมบัญชีทดลองบนหน้าเข้าสู่ระบบ ควรปิดบน production</td></tr>
+          <tr class="cw"><td class="mono">SKIP_ENV_VALIDATION</td><td>Web</td><td>—</td><td>ข้ามการตรวจ env ใช้เฉพาะตอน build image</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="pre-cap">ตัวอย่างการเปิด dependency และรันระบบบนเครื่องพัฒนา</p>
+    <pre><code># ฝั่ง API
+cp .env.example .env &amp;&amp; direnv allow
+make up                      # postgres + redis + localstack + wiremock
+make migrate-up &amp;&amp; make seed
+go run cmd/api/main.go       # :8080  Internal API + Swagger
+go run cmd/laoitapi/main.go  # ตัวรับ webhook
+go run cmd/sqs/main.go       # consumer อ่านคิว (ถ้าต้องการ)
+
+# ฝั่งเว็บ
+bun install
+bun dev                      # :4000</code></pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    tx-service-laos — tx-service-laos-api (Go + Gin + Prisma + PostgreSQL + Redis + SQS) · tx-service-laos-web (Next.js 15 + React 19 + Tailwind) · เชื่อมต่อ LaoITPGW / UniqPay ด้วย HTTP Message Signatures (RFC 9421) · CI/CD GitHub Actions → Amazon ECR · เอกสารนำเสนอโครงการ
+  </div>
+</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="x" id="lbClose" aria-label="ปิด">✕</button>
+  <button class="p" id="lbPrev" aria-label="ก่อนหน้า">‹</button>
+  <img id="lbImg" src="" alt="">
+  <button class="nx" id="lbNext" aria-label="ถัดไป">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+(function(){
+  // theme toggle
+  var root=document.documentElement,btn=document.getElementById('themeBtn');
+  try{var t=localStorage.getItem('tx-theme');if(t)root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=dark?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('tx-theme',next);}catch(e){}
+  });
+
+  // lightbox
+  var lb=document.getElementById('lb'),img=document.getElementById('lbImg'),cap=document.getElementById('lbCap');
+  var items=[],idx=0;
+  document.querySelectorAll('.shots').forEach(function(g){
+    var group=g.getAttribute('data-group');
+    g.querySelectorAll('.shot:not(.tall)').forEach(function(f){
+      var i=f.querySelector('img'),c=f.querySelector('figcaption');
+      var item={src:i.getAttribute('src'),cap:c.textContent.replace(/\s+/g,' ').trim(),group:group};
+      items.push(item);
+      f.addEventListener('click',function(){open(items.indexOf(item));});
+    });
+  });
+  function show(){var it=items[idx];img.src=it.src;cap.textContent=it.cap;}
+  function open(i){idx=i;show();lb.classList.add('open');document.body.style.overflow='hidden';}
+  function close(){lb.classList.remove('open');document.body.style.overflow='';}
+  function step(d){var g=items[idx].group;var n=idx;do{n=(n+d+items.length)%items.length;}while(items[n].group!==g);idx=n;show();}
+  document.getElementById('lbClose').onclick=close;
+  document.getElementById('lbPrev').onclick=function(e){e.stopPropagation();step(-1);};
+  document.getElementById('lbNext').onclick=function(e){e.stopPropagation();step(1);};
+  lb.addEventListener('click',function(e){if(e.target===lb)close();});
+  document.addEventListener('keydown',function(e){
+    if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')close();else if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);
+  });
+})();
+</script>
+</body>
+</html>
