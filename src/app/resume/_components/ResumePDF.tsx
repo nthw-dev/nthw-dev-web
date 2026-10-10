@@ -69,9 +69,10 @@ export default function ResumePDF() {
               <div className="border-l-3 border-blue-300 pl-3">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-semibold text-xs text-gray-800">Senior Backend Developer</h4>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">01/2025 - Present</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">01/2025 - 09/2026 &middot; 21 mo</span>
                 </div>
-                <p className="text-blue-600 text-xs font-medium flex items-center gap-1">Arise by Infinitas Co., Ltd. <span className="text-gray-500 font-normal">(<b>Outsource</b> via GetLinks &rarr; N7 Labs)</span> <MapPin size={10} className="ml-1" /> Bangkok, Thailand</p>
+                <p className="text-blue-600 text-xs font-medium flex items-center gap-1">Arise by Infinitas Co., Ltd. <span className="text-gray-500 font-normal">(<b>Outsource</b>)</span> <MapPin size={10} className="ml-1" /> Bangkok, Thailand</p>
+                <p className="text-[10px] text-gray-500 leading-tight">via GetLinks 01/2025 &ndash; 08/2025 (8 mo) &middot; via N7 Labs 09/2025 &ndash; 09/2026 (13 mo)</p>
                 <p className="text-xs mt-1 text-gray-700"><b>Projects:</b> digital lending platforms for a <b>leading Thai commercial bank</b> and a <b>new virtual bank</b></p>
                 <ul className="text-xs mt-1 space-y-0.5 text-gray-700">
                   <li>• Build <b>30+</b> RESTful API endpoints in <Tech>Go</Tech> (<Tech>Gin</Tech>, <Tech>Bun</Tech>, <Tech>PostgreSQL</Tech>, <Tech>AWS S3</Tech>, <Tech>Redis</Tech>, <Tech>Gotenberg</Tech>) for bill generation, reminder, and repayment flows</li>
@@ -86,7 +87,7 @@ export default function ResumePDF() {
               <div className="border-l-3 border-blue-300 pl-3">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-semibold text-xs text-gray-800">Senior Full-Stack Developer</h4>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">02/2024 - 12/2024</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">02/2024 - 12/2024 &middot; 11 mo</span>
                 </div>
                 <p className="text-blue-600 text-xs font-medium flex items-center gap-1">AATECH SOLUTION CO., LTD. <span className="text-gray-500 font-normal">(<b>Freelance</b>)</span> <Globe size={10} className="ml-1" /> Remote (100%)</p>
                 <p className="text-xs mt-1 text-gray-700"><b>Sole developer</b> from backend, web, and mobile through deployment</p>
@@ -102,7 +103,7 @@ export default function ResumePDF() {
               <div className="border-l-3 border-blue-300 pl-3">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-semibold text-xs text-gray-800">Full-Stack Developer</h4>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">05/2022 - 10/2023</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">05/2022 - 10/2023 &middot; 18 mo</span>
                 </div>
                 <p className="text-blue-600 text-xs font-medium flex items-center gap-1">Xspring Digital Co., Ltd. <span className="text-gray-500 font-normal">(<b>Full-time</b>)</span> <MapPin size={10} className="ml-1" /> Bangkok, Thailand</p>
                 <p className="text-xs mt-1 text-gray-700"><b>Project:</b> <a href="https://trade.xspringdigital.com/en" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">Xspring Digital</a>, a crypto trading and ICO portal (<a href="https://apps.apple.com/th/app/xspring/id6478192213" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">iOS</a> / <a href="https://play.google.com/store/apps/details?id=com.xspring.app" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">Android</a>)</p>
@@ -119,7 +120,7 @@ export default function ResumePDF() {
               <div className="border-l-3 border-blue-300 pl-3">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-semibold text-xs text-gray-800">Full-Stack Developer</h4>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">08/2021 - 04/2022</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">08/2021 - 04/2022 &middot; 9 mo</span>
                 </div>
                 <p className="text-blue-600 text-xs font-medium flex items-center gap-1">Blockfint Co., Ltd. <span className="text-gray-500 font-normal">(<b>Full-time</b>)</span> <MapPin size={10} className="ml-1" /> Bangkok, Thailand</p>
                 <p className="text-xs mt-1 text-gray-700"><b>Project:</b> Thinker Loan, home, and personal loan platform for a <b>Thai commercial bank</b></p>

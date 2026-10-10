@@ -48,13 +48,19 @@ export const stats = [
 
 export type Link = { label: string; url: string };
 
+/** A sub-period of one role, when the same job was contracted through several agencies. */
+export type Engagement = { via: string; period: string; duration: string };
+
 export type Experience = {
   role: string;
   company: string;
   place?: string;
   remote?: boolean;
   period: string;
+  /** Total length of the role, e.g. "21 mo". */
+  duration?: string;
   current?: boolean;
+  engagements?: Engagement[];
   context: string;
   links?: Link[];
   highlights: string[];
@@ -64,10 +70,14 @@ export type Experience = {
 export const experiences: Experience[] = [
   {
     role: "Senior Backend Developer",
-    company: "Arise by Infinitas Co., Ltd. (Outsource via GetLinks → N7 Labs)",
+    company: "Arise by Infinitas Co., Ltd. (Outsource)",
     place: "Bangkok, Thailand",
-    period: "01/2025 — Present",
-    current: true,
+    period: "01/2025 — 09/2026",
+    duration: "21 mo",
+    engagements: [
+      { via: "GetLinks", period: "01/2025 — 08/2025", duration: "8 mo" },
+      { via: "N7 Labs", period: "09/2025 — 09/2026", duration: "13 mo" },
+    ],
     context:
       "Digital lending platforms for a **leading Thai commercial bank** and a **new virtual bank** — billing, reminders, and repayment at national bank scale.",
     highlights: [
@@ -96,6 +106,7 @@ export const experiences: Experience[] = [
     place: "Remote (100%)",
     remote: true,
     period: "02/2024 — 12/2024",
+    duration: "11 mo",
     context:
       "**Sole developer** — backend, web, and mobile through to deployment.",
     links: [
@@ -131,6 +142,7 @@ export const experiences: Experience[] = [
     company: "Xspring Digital Co., Ltd. (Full-time)",
     place: "Bangkok, Thailand",
     period: "05/2022 — 10/2023",
+    duration: "18 mo",
     context:
       "**Xspring Digital** — a crypto trading and ICO portal on web, iOS, and Android.",
     links: [
@@ -169,6 +181,7 @@ export const experiences: Experience[] = [
     company: "Blockfint Co., Ltd. (Full-time)",
     place: "Bangkok, Thailand",
     period: "08/2021 — 04/2022",
+    duration: "9 mo",
     context:
       "**Thinker Loan** — home and personal loan platform for a **Thai commercial bank**.",
     highlights: [
@@ -182,6 +195,7 @@ export const experiences: Experience[] = [
     company: "Odd-e (Thailand) Co., Ltd. (Internship)",
     place: "Bangkok, Thailand",
     period: "03/2021 — 08/2021",
+    duration: "6 mo",
     context:
       "Car rental platform for the **Provincial Electricity Authority (PEA)**.",
     highlights: [

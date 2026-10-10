@@ -49,6 +49,19 @@ export default function Experience() {
                         </span>
                       )}
                     </p>
+                    {job.engagements && (
+                      <ul className="mt-2 space-y-0.5 font-mono text-xs text-slate-500">
+                        {job.engagements.map((e) => (
+                          <li key={e.via} className="flex flex-wrap gap-x-2">
+                            <span className="text-slate-400">via {e.via}</span>
+                            <span>{e.period}</span>
+                            <span className="text-slate-600">
+                              · {e.duration}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 self-start rounded-full px-3 py-1 font-mono text-xs whitespace-nowrap ${
@@ -58,6 +71,9 @@ export default function Experience() {
                     }`}
                   >
                     {job.period}
+                    {job.duration && (
+                      <span className="opacity-60"> · {job.duration}</span>
+                    )}
                   </span>
                 </header>
 

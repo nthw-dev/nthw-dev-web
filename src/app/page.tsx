@@ -26,12 +26,15 @@ const personSchema = {
   },
   alumniOf: { "@type": "CollegeOrUniversity", name: education.school },
   // `company` carries the engagement type in parentheses for display
-  // ("… (Freelance)", "… (Outsource via …)"); an Organization name should be
-  // the employer alone, so the parenthetical is dropped here.
-  worksFor: {
-    "@type": "Organization",
-    name: experiences[0]?.company.replace(/\s*\(.*\)$/, ""),
-  },
+  // ("… (Freelance)", "… (Outsource)"); an Organization name should be
+  // the employer alone, so the parenthetical is dropped here. Only emitted
+  // while the most recent role is still ongoing.
+  ...(experiences[0]?.current && {
+    worksFor: {
+      "@type": "Organization",
+      name: experiences[0].company.replace(/\s*\(.*\)$/, ""),
+    },
+  }),
   knowsAbout: skills.flatMap((g) => g.items),
 };
 
